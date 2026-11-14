@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Children, createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { PROMPTS, type PromptId } from "@/lib/prompts";
 import { say } from "@/lib/say";
 
@@ -42,6 +42,7 @@ export function useCues(...ids: PromptId[]) {
 }
 
 export function Bottom({ children }: { children: ReactNode }) {
+  if (!Children.toArray(children).length) return null;
   return (
     <div className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-2 border-t border-rule bg-cabin/95 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
       {children}
@@ -101,6 +102,7 @@ export function Timed(p: {
 
   return (
     <div className="flex flex-col items-start gap-4">
+      {p.cue && <p className="text-2xl leading-snug font-semibold">{PROMPTS[p.cue]}</p>}
       <p className="text-dim" aria-live="polite">
         {go ? `${p.label}: ${p.secs} seconds.` : "Listen…"}
       </p>
