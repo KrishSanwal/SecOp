@@ -40,15 +40,23 @@ export default function HrLab() {
       const { s, torch } = await openRear();
       S.current.s = s;
       setTorch(torch);
+      const v = vid.current;
+      if (!v) throw new Error("preview not mounted");
+      v.srcObject = s;
+      await v.play().catch(() => {});
       setPh("align");
-      await wait(0);
-      vid.current!.srcObject = s;
-      await vid.current!.play();
       watch();
     } catch (e) {
       await closeRear(S.current.s);
       S.current.s = null;
-      setErr(e instanceof Error && e.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings and try again." : "Could not open the back camera.");
+      const m = e instanceof Error ? e : new Error(String(e));
+      setErr(
+        m.name === "NotAllowedError"
+          ? "Camera permission was blocked. Allow it in the browser settings and try again."
+          : m.name === "NotReadableError"
+            ? "Another app is using the camera. Close it and try again."
+            : `Could not open the back camera: ${m.message || m.name}`,
+      );
       setPh("prep");
     }
   }
@@ -124,7 +132,7 @@ export default function HrLab() {
           )}
         </>
       )}
-      <video ref={vid} playsInline muted className="hidden" />
+      <video ref={vid} playsInline muted autoPlay className="hidden" />
       <canvas ref={cv} className="hidden" />
 
       {v && <Verdict tone={v.tone} title={v.title} body={v.body} nums={v.nums} again={again} />}

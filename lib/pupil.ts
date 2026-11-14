@@ -8,13 +8,15 @@ export type Eye = keyof typeof IRIS;
 let lm: Promise<FaceLandmarker> | null = null;
 
 export function landmarker() {
-  lm ??= FilesetResolver.forVisionTasks("/mp").then((fs) =>
+  const make = (fs: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>, delegate: "GPU" | "CPU") =>
     FaceLandmarker.createFromOptions(fs, {
-      baseOptions: { modelAssetPath: "/models/face_landmarker.task", delegate: "GPU" },
+      baseOptions: { modelAssetPath: "/models/face_landmarker.task", delegate },
       runningMode: "VIDEO",
       numFaces: 1,
-    }),
-  );
+    });
+  // Some phones refuse the GPU path; fall back to CPU.
+  lm ??= FilesetResolver.forVisionTasks("/mp").then((fs) => make(fs, "GPU").catch(() => make(fs, "CPU")));
+  lm.catch(() => { lm = null; });
   return lm;
 }
 

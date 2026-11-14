@@ -13,7 +13,10 @@ export interface PpgResult {
 }
 
 export async function openRear() {
-  const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access. Open the page in Chrome or Safari, over https.");
+  const s = await navigator.mediaDevices
+    .getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+    .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
   const track = s.getVideoTracks()[0];
   let torch = false;
   try {

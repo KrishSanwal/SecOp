@@ -43,13 +43,20 @@ export default function PupilLab() {
 
   async function open() {
     setErr("");
+    let step = "camera";
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access. Open the page in Chrome or Safari, over https.");
+      const s = await navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
       st.current.s = s;
+      step = "preview";
+      const v = vid.current;
+      if (!v) throw new Error("preview not mounted");
+      v.srcObject = s;
+      await v.play().catch(() => {}); // autoplay+muted covers browsers that reject play()
       setPh("align");
-      await wait(0);
-      vid.current!.srcObject = s;
-      await vid.current!.play();
+      step = "face model";
       const f = await landmarker();
       const loop = () => {
         const v = vid.current;
@@ -71,7 +78,14 @@ export default function PupilLab() {
     } catch (e) {
       st.current.s?.getTracks().forEach((t) => t.stop());
       st.current.s = null;
-      setErr(e instanceof Error && e.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings and try again." : "Could not open the camera.");
+      const m = e instanceof Error ? e : new Error(String(e));
+      setErr(
+        m.name === "NotAllowedError"
+          ? "Camera permission was blocked. Allow it in the browser settings and try again."
+          : m.name === "NotReadableError"
+            ? "Another app is using the camera. Close it and try again."
+            : `Could not start the ${step}: ${m.message || m.name}`,
+      );
       setPh("prep");
     }
   }
@@ -119,6 +133,7 @@ export default function PupilLab() {
       {err && <p className="text-alert">{err}</p>}
 
       {ph === "prep" && <Prep items={PREP} onAll={open} />}
+      <video ref={vid} playsInline muted autoPlay className={`order-none aspect-[4/3] w-full -scale-x-100 rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
 
       {ph !== "prep" && (
         <>
@@ -129,7 +144,6 @@ export default function PupilLab() {
               </button>
             ))}
           </div>
-          <video ref={vid} playsInline muted className={`aspect-[4/3] w-full -scale-x-100 rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
           {ph === "align" && <Status checks={checks} count={count} />}
           {ph === "align" && <p className="text-sm text-dim">The test starts on its own once everything is ready. Keep looking at the camera when the screen goes dark, then bright.</p>}
         </>
