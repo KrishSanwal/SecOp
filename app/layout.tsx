@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Second Opinion",
-  description: "Peer health exam for astronaut crews. Works offline.",
+  description: "A five-minute peer health exam for astronaut crews. Works offline.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
