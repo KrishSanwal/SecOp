@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Second Opinion
 
-## Getting Started
+**NASA Space Apps 2026, Delhi. Challenge: Create Health Monitoring Software for Astronauts on Space Missions. Team Vortexx.**
 
-First, run the development server:
+On a Mars crew of four, your crewmate is your doctor. Second Opinion is a voice-guided five-minute
+peer exam: two astronauts check each other (pupil response, orthostatic heart rate, balance, mood,
+reaction time), each scores the other, and the app compares every result to that person's own
+baseline and to the procedures in NASA's ISS Medical Checklist.
+
+The challenge says astronauts must spot changes in themselves. Our answer: you cannot see your own
+decline, so we fix the blind spot with the person beside you.
+
+## Why it works with no ground link
+
+All records live in the browser (IndexedDB). Nothing needs Mission Control. Voice is optional:
+every step has buttons, so the exam runs even if the voice service is unreachable.
+
+## Run it
 
 ```bash
+npm install
+cp .env.example .env.local   # fill GROQ_API_KEY
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js (App Router) on Vercel, TypeScript, Tailwind. Voice: Groq Whisper (speech to text),
+Groq LLM (parse spoken answers), Groq Orpheus (text to speech). Storage: IndexedDB via `idb`.
+No wearables, no backend database.
 
-## Learn More
+## NASA data and resources used
 
-To learn more about Next.js, take a look at the following resources:
+- ISS Medical Checklist (JSC-48522), NASA public document: exam procedures and decision branches
+- NASA-STD-3001 Human Systems Standard: physiological limits
+- NASA Human Research Roadmap: risk definitions (altered gravity, isolation, radiation, closed environment)
+- NASA Human Research Program publications on orthostatic intolerance and post-flight balance
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Full list with links: `docs/SOURCES.md`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Use of AI tools (SI disclosure)
 
-## Deploy on Vercel
+Code and documentation were written with AI assistance (Claude Code, Anthropic). All logic was
+reviewed and tested by the team. No NASA branding is used anywhere in the project.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Not a medical device
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Second Opinion is a hackathon prototype. It is not validated for clinical use.
+
+## Team
+
+Vortexx, Delhi. See `PLAN.md` for the build plan and task split.
