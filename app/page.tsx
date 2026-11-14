@@ -2,13 +2,13 @@ import CrewPick from "@/components/crew-pick";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-4 py-10">
-      <header>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">Second Opinion</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Who is examining whom?</h1>
-        <p className="mt-2 text-zinc-400">
-          You can&apos;t see your own decline. Your crewmate can. Pick who is examined and who runs the exam.
-        </p>
+    <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-10 px-4 pt-6">
+      <header className="flex items-center gap-2.5 text-[0.95rem] font-semibold">
+        <svg viewBox="0 0 28 20" className="h-5 w-7 text-accent" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <circle cx="10" cy="10" r="8" />
+          <circle cx="18" cy="10" r="8" />
+        </svg>
+        Second Opinion
       </header>
       <CrewPick />
     </main>
