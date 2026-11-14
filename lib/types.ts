@@ -2,9 +2,9 @@ export type Pupil = "brisk" | "sluggish" | "unequal";
 export type Sway = "none" | "mild" | "marked" | "out";
 
 export interface Results {
-  pupils: { l: Pupil; r: Pupil };
-  hr: { sit: number; stand: number }; // beats per 15 s
-  bal: { sway: Sway; secs: number };
+  pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number }; // camera: ms, share, |L-R| con
+  hr: { sit: number; stand: number; cam?: boolean }; // beats per 15 s (camera writes bpm / 4)
+  bal: { sway: Sway; secs: number; rms?: number }; // rms: m/s^2 from motion sensor
   mood: { sleep: number; score: 1 | 2 | 3 | 4 | 5; note: string };
   rx: { ms: number[] };
 }
@@ -45,6 +45,9 @@ export interface Metrics {
   sleep: number;
   mood: number;
   rx: number;
+  plat: number;
+  pcon: number;
+  brms: number;
 }
 
 export interface Report {

@@ -86,3 +86,35 @@ describe("report", () => {
     expect(report(e1, [e1]).base).toBeNull();
   });
 });
+
+describe("camera and sensor flags", () => {
+  const cam = (lat: number, con: number, rms: number, asym = 0): Partial<Results> => ({
+    pupils: { l: "brisk", r: "brisk", lat, con, asym },
+    bal: { sway: "none", secs: 30, rms },
+  });
+  const hist = () => [ex(cam(250, 0.3, 0.1), 1), ex(cam(270, 0.32, 0.12), 2)];
+
+  it("nothing when close to own baseline", () => {
+    const e = ex(cam(280, 0.29, 0.13), 3);
+    expect(report(e, [...hist(), e]).flags).toEqual([]);
+  });
+  it("slow reflex vs baseline", () => {
+    const e = ex(cam(360, 0.3, 0.1), 3);
+    expect(ids(report(e, [...hist(), e]).flags)).toEqual(["pupil_slow"]);
+  });
+  it("weak constriction vs baseline", () => {
+    const e = ex(cam(260, 0.15, 0.1), 3);
+    expect(ids(report(e, [...hist(), e]).flags)).toEqual(["pupil_slow"]);
+  });
+  it("asymmetry needs no baseline", () => {
+    expect(ids(flags(ex(cam(250, 0.3, 0.1, 0.15), 3), null, null))).toEqual(["pupil_uneq"]);
+  });
+  it("sway 50% over baseline", () => {
+    const e = ex(cam(260, 0.3, 0.2), 3);
+    expect(ids(report(e, [...hist(), e]).flags)).toEqual(["bal_bad"]);
+  });
+  it("old manual exams still score", () => {
+    const e = ex({}, 3);
+    expect(Number.isNaN(report(e, [ex({}, 1), ex({}, 2), e]).m.plat)).toBe(true);
+  });
+});

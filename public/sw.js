@@ -1,5 +1,6 @@
-const V = "so-v3";
+const V = "so-v4";
 const PAGES = ["/", "/exam", "/result"];
+const MP = ["/mp/vision_wasm_internal.js", "/mp/vision_wasm_internal.wasm", "/models/face_landmarker.task"];
 
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 
@@ -9,8 +10,8 @@ self.addEventListener("install", (e) => {
     (async () => {
       const c = await caches.open(V);
       const ids = await within(fetch("/audio/index.json").then((r) => r.json()), 5000).catch(() => null);
-      const urls = [...PAGES, "/manifest.webmanifest", "/audio/index.json", ...(ids || []).map((id) => `/audio/${id}.mp3`)];
-      await within(Promise.all(urls.map((u) => c.add(u).catch(() => {}))), 15000); // never block install on one file
+      const urls = [...PAGES, ...MP, "/manifest.webmanifest", "/audio/index.json", ...(ids || []).map((id) => `/audio/${id}.mp3`)];
+      await within(Promise.all(urls.map((u) => c.add(u).catch(() => {}))), 30000); // never block install on one file
     })(),
   );
 });
@@ -29,7 +30,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
 
-  const immutable = url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/audio/");
+  const immutable = url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/audio/") || url.pathname.startsWith("/mp/") || url.pathname.startsWith("/models/");
   e.respondWith(immutable ? cacheFirst(req) : netFirst(req));
 });
 

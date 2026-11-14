@@ -4,8 +4,9 @@ Deadline: **Sunday 15 Nov 2026, 11:59 PM IST.** Submission is final. Demo video:
 
 ## The one sentence
 
-Two astronauts examine each other for five minutes; the app guides the exam by voice, scores each
-person against their own baseline, and tells them what to do next using NASA's ISS Medical Checklist.
+Two astronauts examine each other for five minutes; the phone's own camera and motion sensor take the
+measurements, the app compares each person against their own previous sessions, and tells them what to
+do next using NASA's ISS Medical Checklist. The examiner holds and positions the phone; they do not judge.
 
 ## Design (decided)
 
@@ -15,19 +16,26 @@ person against their own baseline, and tells them what to do next using NASA's I
 - Both crew take both roles, back to back. That is the "second opinion".
 
 ### The five stations (in order, about one minute each)
-| # | Station | Hazard it covers | How it is measured | Score stored |
-|---|---|---|---|---|
-| 1 | Pupils | Neuro / radiation / SANS | Examiner shines phone light into each eye; app times it; examiner rates each pupil: brisk / sluggish / unequal | 0 to 2 per eye |
-| 2 | Orthostatic HR | Altered gravity / cardiovascular | Subject sits 1 min, app times 15-second pulse count; stands; app times 15-second count at 1 min standing. Examiner enters both counts | delta bpm |
-| 3 | Balance | Altered gravity / vestibular | Romberg: subject stands feet together, eyes closed, 30 seconds. App times it; examiner rates sway: none / mild / marked / stepped out | 0 to 3 |
-| 4 | Mood and sleep | Isolation / behavioral health | Three spoken questions to the subject (sleep hours, mood 1 to 5, "anything bothering you"), answered by voice or buttons | hours, 1 to 5, free text |
-| 5 | Reaction | Cognition / closed environment (CO2) | Subject taps when the screen flashes, 10 trials | median ms |
+| # | Station | Hazard | How it is measured (automatic) | Stored | Fallback |
+|---|---|---|---|---|---|
+| 1 | Pupils | Neuro / radiation / SANS | Front camera 10-15 cm from the eye. Screen goes dark 1.5 s, then flashes white 2.5 s. MediaPipe finds the iris; dark pixels inside it = pupil. Pupil/iris ratio per frame gives latency and constriction. Both eyes. `lib/pupil.ts` | `pupils.lat` ms, `pupils.con` share, `pupils.asym` | Examiner rating brisk / sluggish / unequal (`l`, `r`) |
+| 2 | Orthostatic HR | Altered gravity / cardiovascular | Subject's fingertip over the back camera, flashlight on: red channel pulses with each beat. 20 s sitting, stand, 1 min wait, 20 s standing. `lib/ppg.ts` | `hr.sit`, `hr.stand` (bpm / 4), `hr.cam = true` | Manual 15 s pulse count |
+| 3 | Balance | Altered gravity / vestibular | Subject holds phone flat on the chest, feet together, eyes closed, 30 s. Motion sensor measures sway; a jolt means stepped out. `lib/sway.ts` | `bal.rms` m/s², `bal.secs`, `bal.sway` (derived) | Examiner sway rating |
+| 4 | Mood and sleep | Isolation / behavioral health | Questions, answered with buttons. Cannot be automatic. | hours, 1 to 5, free text | none |
+| 5 | Reaction | Cognition / CO2 | Tap when the screen turns green, 10 trials (already automatic) | median ms | none |
+
+Gravity: stations 2 and 3 need gravity. They are for planetary surface ops and after landing (Krish,
+`docs/CHECKLIST_MAP.md`). The flow should let the crew skip them when in transit.
+
+Lighting: pupils need the room lights on (the camera must see the iris) and work best on lighter irises.
+Dark brown eyes are the known risk; verify with `/lab/pupil` before relying on it.
 
 ### Scoring
 - Each station produces a number. The first two exams are the **baseline** (mean).
-- Later exams show **delta from baseline**. Flag when: pupil asymmetry or sluggish; orthostatic
-  delta > 30 bpm; Romberg marked or stepped out; sleep < 6 h two days running; mood <= 2; reaction
-  median > baseline + 20%.
+- Later exams show **delta from baseline**. Flag when: pupil latency > baseline + 25%, constriction
+  < baseline - 30%, or left/right constriction differs by > 0.1; orthostatic delta > 30 bpm; sway RMS
+  > baseline + 50% or stepped out; sleep < 6 h two days running; mood <= 2; reaction median > baseline
+  + 20%. Limits live in `LIMITS` in `lib/scoring.ts`. Manual ratings still score if a sensor fails.
 - Each flag maps to one action card: what to do now, and when to contact the flight surgeon. The
   mapping lives in `docs/CHECKLIST_MAP.md` and is sourced from the ISS Medical Checklist.
 
@@ -74,6 +82,17 @@ Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by 
 | 10 | Seed data: two crew with two baseline exams each, one "drifted" exam for the demo | A | result card shows a real flag |
 | 11 | Demo video, 30 seconds, uploaded unlisted on YouTube | B | public link works in incognito |
 | 12 | Submission form text, NASA links, SI disclosure, Submit for Judging | A + B | status shows Submitted |
+
+## Sensor build (added Sat 14 Nov evening)
+
+| # | Task | Owner | Done when |
+|---|---|---|---|
+| 13 | Sensor libs: `lib/pupil.ts`, `lib/ppg.ts`, `lib/sway.ts`, scoring fields, lab pages `/lab/*` | A | done: 24 tests, labs live |
+| 14 | Test `/lab/pupil` on own eyes on a phone; report if the red disc tracks the pupil | A + B | go / no-go for camera pupils |
+| 15 | Wire camera HR + motion balance into `components/exam.tsx` with manual fallback | B | full exam runs with phone sensors |
+| 16 | Wire camera pupils into the exam (only if 14 is a go) | B | pupil station automatic |
+| 17 | Result card shows the new numbers vs usual (latency, constriction, sway) | B | numbers visible with "usual" |
+| 18 | In-transit toggle: skip stations 2 and 3 | B | toggle on intro screen |
 
 ## Timeline (IST)
 

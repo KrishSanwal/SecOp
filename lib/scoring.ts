@@ -1,11 +1,12 @@
 import type { Exam, Flag, Metrics, Pupil, Report, Sway } from "./types";
 
 // Keep in sync with docs/CHECKLIST_MAP.md
-export const LIMITS = { hr: 30, sleep: 6, mood: 2, rx: 0.2, baseN: 2 } as const;
+export const LIMITS = { hr: 30, sleep: 6, mood: 2, rx: 0.2, baseN: 2, plat: 0.25, pcon: 0.3, asym: 0.1, brms: 0.5 } as const;
 
 const PUP: Record<Pupil, number> = { brisk: 0, sluggish: 1, unequal: 2 };
 const SWAY: Record<Sway, number> = { none: 0, mild: 1, marked: 2, out: 3 };
-const KEYS: (keyof Metrics)[] = ["pupil", "hr", "bal", "sleep", "mood", "rx"];
+const KEYS: (keyof Metrics)[] = ["pupil", "hr", "bal", "sleep", "mood", "rx", "plat", "pcon", "brms"];
+const num = (v?: number) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
 
 export function median(xs: number[]): number {
   const v = xs.filter((x) => Number.isFinite(x) && x > 0).sort((a, b) => a - b);
@@ -23,6 +24,9 @@ export function metrics(e: Exam): Metrics {
     sleep: r.mood.sleep,
     mood: r.mood.score,
     rx: median(r.rx.ms),
+    plat: num(r.pupils.lat),
+    pcon: num(r.pupils.con),
+    brms: num(r.bal.rms),
   };
 }
 
@@ -81,6 +85,23 @@ export function flags(e: Exam, base: Metrics | null, prev: Exam | null): Flag[] 
   if (base && Number.isFinite(m.rx) && Number.isFinite(base.rx) && m.rx > base.rx * (1 + LIMITS.rx)) {
     const pct = Math.round((m.rx / base.rx - 1) * 100);
     out.push({ id: "rx_slow", stn: "rx", msg: `Reaction ${pct}% slower (${Math.round(m.rx)} ms).` });
+  }
+
+  const has = (id: string) => out.some((f) => f.id === id);
+  const up = (v: number, b: number | undefined, k: number) => base && Number.isFinite(v) && Number.isFinite(b as number) && v > (b as number) * (1 + k);
+
+  if (!has("pupil_uneq") && Number.isFinite(num(r.pupils.asym)) && num(r.pupils.asym) > LIMITS.asym) {
+    out.push({ id: "pupil_uneq", stn: "pupils", msg: `Eyes shrank by different amounts (${Math.round(num(r.pupils.asym) * 100)} pts apart).` });
+  }
+  if (!has("pupil_slow") && !has("pupil_uneq")) {
+    if (up(m.plat, base?.plat, LIMITS.plat)) {
+      out.push({ id: "pupil_slow", stn: "pupils", msg: `Pupils ${Math.round(m.plat)} ms to react, usual ${Math.round(base!.plat)} ms.` });
+    } else if (base && Number.isFinite(m.pcon) && Number.isFinite(base.pcon) && m.pcon < base.pcon * (1 - LIMITS.pcon)) {
+      out.push({ id: "pupil_slow", stn: "pupils", msg: `Pupils shrank ${Math.round(m.pcon * 100)}%, usual ${Math.round(base.pcon * 100)}%.` });
+    }
+  }
+  if (!has("bal_bad") && up(m.brms, base?.brms, LIMITS.brms)) {
+    out.push({ id: "bal_bad", stn: "bal", msg: `Sway ${Math.round((m.brms / base!.brms - 1) * 100)}% above usual.` });
   }
 
   return out;

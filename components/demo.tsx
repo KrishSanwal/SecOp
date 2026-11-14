@@ -14,9 +14,11 @@ export default function Demo() {
     setBusy(true);
     try {
       await wipe();
-      router.push(`/result?id=${await seed()}`);
-    } catch {
+      const id = await seed();
+      router.push(`/result?id=${id}`);
+    } catch (err) {
       setBusy(false);
+      console.error("Demo load failed:", err);
       alert("Could not load the demo crew. Reload the page and try again.");
     }
   }
