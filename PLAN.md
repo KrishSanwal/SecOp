@@ -31,22 +31,23 @@ person against their own baseline, and tells them what to do next using NASA's I
 - Each flag maps to one action card: what to do now, and when to contact the flight surgeon. The
   mapping lives in `docs/CHECKLIST_MAP.md` and is sourced from the ISS Medical Checklist.
 
-### Voice
-- The app **speaks** every instruction (Groq Orpheus TTS via `/api/tts`).
-- The app **listens** for examiner and subject answers (Groq Whisper via `/api/stt`), then a small
-  Groq LLM call turns the transcript into a structured value (`/api/parse`).
-- **Buttons always work.** Voice is a layer on top, never the only path.
+### Voice (offline)
+- Prompts are fixed text in `lib/prompts.ts`, pre-recorded once with Groq Orpheus (`npm run audio`)
+  into `public/audio/*.mp3`. Play one with `say("hr_sit")` from `lib/say.ts`.
+- No voice input. Every answer is a button or number pad.
+- The exam needs no network. `public/sw.js` caches pages, scripts and audio on first load.
+- `/api/stt`, `/api/tts`, `/api/parse` exist but the exam never calls them.
 
 ### Storage
 - IndexedDB (`idb` package). One store: `exams` keyed by id, with `subjectId`, `examinerId`,
   `timestamp`, five station results. One store: `crew` with names and baselines.
 - Export as JSON from the results screen.
 
-### Screens
+### Screens (query params, not [id] folders, so the offline cache covers every exam)
 1. `/` Crew: pick subject and examiner (two cards, swap button).
 2. `/exam` Station flow: one station per screen, big timer, voice prompt, buttons.
-3. `/result/[id]` Result card: five rows, delta vs baseline, flags, action cards.
-4. `/history/[crewId]` Timeline of that crew member's exams.
+3. `/result?id=` Result card: five rows, delta vs baseline, flags, action cards.
+4. `/history?crew=` Timeline of that crew member's exams.
 
 Dark UI. One accent colour. No NASA logos anywhere.
 
@@ -64,12 +65,12 @@ Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by 
 | 1 | Repo, scaffold, deploy to Vercel, env vars | A | Vercel URL loads the home page |
 | 2 | `lib/scoring.ts`: station types, baseline, delta, flag rules, with unit tests | A | `npm test` green |
 | 3 | `lib/db.ts`: IndexedDB crew + exams store, export JSON | A | add/list/get work in browser |
-| 4 | `/api/stt`, `/api/tts`, `/api/parse` Groq routes | A | curl each route and get audio / text / JSON back |
+| 4 | Groq routes (now build-time only, for prompt audio) | A | done |
 | 5 | Crew screen `/` | B | pick subject + examiner, continue to exam |
 | 6 | Station flow `/exam`: 5 station screens, timers, buttons | B | full exam completes and saves |
-| 7 | Result card `/result/[id]` with flags and action cards | B | shows deltas against seeded baseline |
+| 7 | Result card `/result?id=` with flags and action cards | B | shows deltas against seeded baseline |
 | 8 | `docs/CHECKLIST_MAP.md`: flag to action mapping from ISS Medical Checklist, with citations | B | every flag has an action and a source |
-| 9 | Wire voice into the station flow (speak prompt, listen, fill field) | A | exam runs hands-free on phone |
+| 9 | Offline: prompt audio + service worker + installable app | A | exam works in airplane mode |
 | 10 | Seed data: two crew with two baseline exams each, one "drifted" exam for the demo | A | result card shows a real flag |
 | 11 | Demo video, 30 seconds, uploaded unlisted on YouTube | B | public link works in incognito |
 | 12 | Submission form text, NASA links, SI disclosure, Submit for Judging | A + B | status shows Submitted |
@@ -78,7 +79,7 @@ Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by 
 
 - **Sat 14 Nov, by 18:00**: tasks 1, 2, 3, 5 done. App runs locally with a fake exam.
 - **Sat 14 Nov, by 23:00**: tasks 4, 6, 7, 8. Full exam, result card, no voice yet.
-- **Sun 15 Nov, by 14:00**: tasks 9, 10. Voice works on a phone. Seeded demo path.
+- **Sun 15 Nov, by 14:00**: task 10. Seeded demo path. Film the demo in airplane mode.
 - **Sun 15 Nov, by 18:00**: freeze features. Task 11 (video) and 12 (form) only.
 - **Sun 15 Nov, 21:00**: Submit for Judging. Three hours of buffer. Do not use it for features.
 
