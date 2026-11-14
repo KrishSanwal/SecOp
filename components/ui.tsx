@@ -7,7 +7,7 @@ import { say } from "@/lib/say";
 export const btn =
   "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed";
 export const ghost = `${btn} border border-edge text-ink hover:bg-panel active:bg-rule`;
-export const primary = `${btn} min-h-14 w-full bg-accent text-lg text-on-accent hover:brightness-110 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:hover:brightness-100`;
+export const primary = `${btn} min-h-14 w-full text-center bg-accent text-lg text-on-accent hover:brightness-110 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:hover:brightness-100`;
 
 export const Talk = createContext<(id: PromptId) => Promise<boolean>>(say);
 
