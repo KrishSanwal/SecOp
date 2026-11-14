@@ -1,19 +1,32 @@
 import type { PromptId } from "./prompts";
 
 let cur: HTMLAudioElement | null = null;
+let stop: ((ended: boolean) => void) | null = null;
 
-export function say(id: PromptId): Promise<void> {
+function cut() {
   cur?.pause();
+  cur = null;
+  stop?.(false);
+  stop = null;
+}
+
+// Resolves true when the prompt finished (or could not play), false when another prompt or hush() cut it off.
+export function say(id: PromptId): Promise<boolean> {
+  cut();
   const a = new Audio(`/audio/${id}.mp3`);
   cur = a;
   return new Promise((done) => {
-    a.onended = () => done();
-    a.onerror = () => done();
-    a.play().catch(() => done()); // autoplay blocked: buttons still work
+    stop = done;
+    const fin = () => {
+      if (stop === done) stop = null;
+      done(true);
+    };
+    a.onended = fin;
+    a.onerror = fin;
+    a.play().catch(fin); // autoplay blocked: buttons still work
   });
 }
 
 export function hush() {
-  cur?.pause();
-  cur = null;
+  cut();
 }
