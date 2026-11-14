@@ -1,5 +1,5 @@
-const V = "so-v2";
-const PAGES = ["/", "/exam", "/result", "/history"];
+const V = "so-v3";
+const PAGES = ["/", "/exam", "/result"];
 
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 

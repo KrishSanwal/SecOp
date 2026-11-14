@@ -1,4 +1,5 @@
 import CrewPick from "@/components/crew-pick";
+import Demo from "@/components/demo";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
           <circle cx="18" cy="10" r="8" />
         </svg>
         Second Opinion
+        <Demo />
       </header>
       <CrewPick />
     </main>
