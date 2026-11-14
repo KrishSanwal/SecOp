@@ -29,6 +29,7 @@ export interface Frame {
   lum: number; // mean brightness inside the iris, 0-255
   cx: number;
   cy: number;
+  sep: number; // pupil vs iris contrast, 0..1
 }
 
 const SIDE = 96;
@@ -37,7 +38,7 @@ const SIDE = 96;
 export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: Eye, work: HTMLCanvasElement, dbg?: HTMLCanvasElement): Frame {
   const res = f.detectForVideo(v, t);
   const pts = res.faceLandmarks?.[0];
-  const none = { t, ratio: NaN, irisPx: 0, face: false, open: 0, lum: 0, cx: 0, cy: 0 };
+  const none = { t, ratio: NaN, irisPx: 0, face: false, open: 0, lum: 0, cx: 0, cy: 0, sep: 0 };
   if (!pts) return none;
 
   const [c, ...edge] = IRIS[eye].map((i) => pts[i]);
@@ -53,37 +54,76 @@ export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: 
   ctx.drawImage(v, cx - r, cy - r, 2 * r, 2 * r, 0, 0, SIDE, SIDE);
   const px = ctx.getImageData(0, 0, SIDE, SIDE);
 
-  // Luma inside 85% of the iris disk (skip the lids and the iris rim).
-  const R = SIDE / 2, inner = R * 0.85;
-  const lum: number[] = [];
-  const idx: number[] = [];
-  for (let y = 0; y < SIDE; y++)
-    for (let x = 0; x < SIDE; x++) {
-      if (Math.hypot(x - R, y - R) > inner) continue;
-      const i = (y * SIDE + x) * 4;
-      lum.push(0.299 * px.data[i] + 0.587 * px.data[i + 1] + 0.114 * px.data[i + 2]);
-      idx.push(i);
-    }
-  const th = otsu(lum);
-  let dark = 0;
-  for (let k = 0; k < lum.length; k++) {
-    const d = lum[k] < th;
-    if (d) dark++;
-    if (dbg) {
-      const i = idx[k];
-      px.data[i] = d ? 255 : px.data[i] * 0.4;
-      px.data[i + 1] = d ? 40 : px.data[i + 1] * 0.4;
-      px.data[i + 2] = d ? 40 : px.data[i + 2] * 0.4;
-    }
-  }
+  const { inP, frac, mean, sep } = segment(px.data, SIDE);
   if (dbg) {
+    for (let k = 0; k < inP.length; k++) {
+      const i = k * 4;
+      if (inP[k]) { px.data[i] = 255; px.data[i + 1] = 60; px.data[i + 2] = 60; }
+      else { px.data[i] *= 0.45; px.data[i + 1] *= 0.45; px.data[i + 2] *= 0.45; }
+    }
     dbg.width = dbg.height = SIDE;
     dbg.getContext("2d")!.putImageData(px, 0, 0);
   }
-  // Dark area as a share of the inner disk -> radius ratio vs the full iris.
-  const frac = dark / lum.length;
-  const mean = lum.reduce((a, b) => a + b, 0) / (lum.length || 1);
-  return { t, ratio: Math.sqrt(frac) * 0.85, irisPx: r, face: true, open, lum: mean, cx, cy };
+  return { t, ratio: Math.sqrt(frac) * 0.85, irisPx: r, face: true, open, lum: mean, cx, cy, sep };
+}
+
+/** Find the pupil in a square RGBA crop centred on the iris. Pure, for tests. */
+export function segment(data: Uint8ClampedArray, SIDE: number) {
+  const px = { data };
+  // Red channel: brown irises reflect red, the pupil does not, so this separates them best on RGB cameras.
+  const R = SIDE / 2, inner = R * 0.85, seedR = R * 0.45;
+  const val = new Float32Array(SIDE * SIDE).fill(-1);
+  const vals: number[] = [];
+  for (let y = 0; y < SIDE; y++)
+    for (let x = 0; x < SIDE; x++) {
+      if (Math.hypot(x - R, y - R) > inner) continue;
+      const v = px.data[(y * SIDE + x) * 4];
+      val[y * SIDE + x] = v;
+      vals.push(v);
+    }
+  const sorted = [...vals].sort((p, q) => p - q);
+  const glint = Math.max(200, sorted[Math.floor(sorted.length * 0.99)] ?? 255); // flash reflection on the cornea
+  const th = otsu(vals.filter((v) => v < glint));
+
+  // Grow the pupil from the darkest pixel near the centre; glints inside it count as pupil.
+  let seed = -1, best = 1e9;
+  for (let y = 0; y < SIDE; y++)
+    for (let x = 0; x < SIDE; x++) {
+      const k = y * SIDE + x, v = val[k];
+      if (v < 0 || Math.hypot(x - R, y - R) > seedR) continue;
+      if (v < best) { best = v; seed = k; }
+    }
+  const inP = new Uint8Array(SIDE * SIDE);
+  let dark = 0;
+  if (seed >= 0 && best <= th) {
+    const q = [seed];
+    inP[seed] = 1;
+    while (q.length) {
+      const k = q.pop()!;
+      dark++;
+      const x = k % SIDE, y = (k / SIDE) | 0;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= SIDE || ny >= SIDE) continue;
+        const n = ny * SIDE + nx;
+        if (inP[n]) continue;
+        const v = val[n];
+        if (v >= 0 && (v <= th || v >= glint)) { inP[n] = 1; q.push(n); }
+      }
+    }
+  }
+  // Pupil area as a share of the inner disk -> radius ratio vs the full iris.
+  const frac = dark / (vals.length || 1);
+  const mean = vals.reduce((p, q) => p + q, 0) / (vals.length || 1);
+  // Contrast between pupil and the rest of the iris; low = camera can't tell them apart.
+  let pin = 0, pn = 0, rin = 0, rn = 0;
+  for (let k = 0; k < inP.length; k++) {
+    const v = val[k];
+    if (v < 0 || v >= glint) continue;
+    if (inP[k]) { pin += v; pn++; } else { rin += v; rn++; }
+  }
+  const sep = pn && rn ? (rin / rn - pin / pn) / (rin / rn || 1) : 0;
+  return { inP, frac, mean, sep, th };
 }
 
 function otsu(xs: number[]): number {
@@ -125,6 +165,7 @@ export function ready(fs: Frame[]): Check[] {
     { id: "open", ok: !!f && f.open > 0.55, fix: "Open your eye wide" },
     { id: "light", ok: !!f && f.lum > 35, fix: "Turn the room lights on" },
     { id: "still", ok: move < 0.35, fix: "Hold the phone still" },
+    { id: "sep", ok: med(recent.map((x) => x.sep)) > 0.12, fix: "Pupil not visible yet: add more light from the front, or switch to the back camera with flash" },
   ];
 }
 

@@ -2,17 +2,46 @@
 
 import { useEffect, useRef, useState } from "react";
 import { beep, Page, Prep, Status, Verdict, wait, type Tone } from "@/components/lab";
+import { closeRear } from "@/lib/ppg";
 import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame, type Reflex } from "@/lib/pupil";
 
 type Ph = "prep" | "align" | "dark" | "flash" | "done";
+type Mode = "back" | "front";
 
-const PREP = [
-  "Screen brightness to maximum",
-  "Room lights on, no bright window behind you",
-  "Glasses off",
-  "Hold the phone at eye level, 10 to 15 cm from your face",
-  "Look straight into the front camera, not at the screen",
-];
+// Back camera + flash is the method that works best in research (bright light, sharper camera).
+const PREP: Record<Mode, string[]> = {
+  back: [
+    "A crewmate holds the phone; you are the one being tested",
+    "Room lights on, no bright window behind you",
+    "Glasses off",
+    "Back camera at eye level, 15 to 20 cm from the eye",
+    "Look past the phone at something far away, not into the light",
+  ],
+  front: [
+    "Screen brightness to maximum",
+    "Room lights on, a lamp in front of you helps",
+    "Glasses off",
+    "Hold the phone at eye level, 10 to 15 cm from your face",
+    "Look straight into the front camera, not at the screen",
+  ],
+};
+
+async function torch(s: MediaStream | null, on: boolean) {
+  const t = s?.getVideoTracks()[0];
+  if (!t) return false;
+  try {
+    await t.applyConstraints({ advanced: [{ torch: on } as MediaTrackConstraintSet] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasTorch(s: MediaStream) {
+  const t = s.getVideoTracks()[0];
+  const caps = (t?.getCapabilities?.() ?? {}) as { torch?: boolean };
+  return !!caps.torch;
+}
 
 export default function PupilLab() {
   const vid = useRef<HTMLVideoElement>(null);
@@ -25,8 +54,10 @@ export default function PupilLab() {
   const [out, setOut] = useState<Reflex | null>(null);
   const [debug, setDebug] = useState(false);
   const [err, setErr] = useState("");
+  const [mode, setMode] = useState<Mode>("back");
+  const [note, setNote] = useState("");
 
-  const st = useRef({ ph: "prep" as Ph, eye: "r" as Eye, fs: [] as Frame[], rec: null as Frame[] | null, okRun: 0, busy: false, debug: false, raf: 0, s: null as MediaStream | null });
+  const st = useRef({ ph: "prep" as Ph, eye: "r" as Eye, fs: [] as Frame[], rec: null as Frame[] | null, okRun: 0, busy: false, debug: false, raf: 0, s: null as MediaStream | null, mode: "back" as Mode });
   useEffect(() => {
     st.current.ph = ph;
     st.current.eye = eye;
@@ -37,7 +68,7 @@ export default function PupilLab() {
     const S = st.current;
     return () => {
       cancelAnimationFrame(S.raf);
-      S.s?.getTracks().forEach((t) => t.stop());
+      closeRear(S.s);
     };
   }, []);
 
@@ -46,10 +77,21 @@ export default function PupilLab() {
     let step = "camera";
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access. Open the page in Chrome or Safari, over https.");
-      const s = await navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
-        .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+      let m = mode;
+      const get = (fm: "user" | "environment") =>
+        navigator.mediaDevices
+          .getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
+          .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+      let s = await get(m === "back" ? "environment" : "user");
+      if (m === "back" && !hasTorch(s)) {
+        s.getTracks().forEach((t) => t.stop());
+        m = "front";
+        setMode("front");
+        setNote("This phone or browser can't control the flash, so the test uses the front camera and the screen instead. Chrome on Android supports the flash.");
+        s = await get("user");
+      }
       st.current.s = s;
+      st.current.mode = m;
       step = "preview";
       const v = vid.current;
       if (!v) throw new Error("preview not mounted");
@@ -106,11 +148,15 @@ export default function PupilLab() {
     }
     setCount(null);
     S.rec = [];
-    setPh("dark");
+    const back = S.mode === "back";
+    if (!back) setPh("dark");
+    else setPh("flash");
     await wait(1500);
+    if (back) await torch(S.s, true);
+    else setPh("flash");
     const flash = performance.now();
-    setPh("flash");
     await wait(2500);
+    if (back) await torch(S.s, false);
     const r = reflex(S.rec, flash);
     S.rec = null;
     setOut(r);
@@ -126,14 +172,25 @@ export default function PupilLab() {
   }
 
   const v = out ? verdict(out) : null;
-  const cover = ph === "dark" ? "bg-black" : ph === "flash" ? "bg-white" : "";
+  const back = mode === "back";
+  const cover = back ? "" : ph === "dark" ? "bg-black" : ph === "flash" ? "bg-white" : "";
 
   return (
-    <Page title="Pupil light test" intro="The screen flashes and the camera times how fast your pupil shrinks. One eye at a time.">
+    <Page title="Pupil light test" intro="A bright light and the camera time how fast the pupil shrinks. One eye at a time.">
       {err && <p className="text-alert">{err}</p>}
 
-      {ph === "prep" && <Prep items={PREP} onAll={open} />}
-      <video ref={vid} playsInline muted autoPlay className={`order-none aspect-[4/3] w-full -scale-x-100 rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
+      {ph === "prep" && (
+        <div className="flex gap-2" role="group" aria-label="Who holds the phone">
+          {(["back", "front"] as Mode[]).map((m) => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className="min-h-11 flex-1 rounded-lg border border-edge px-2 text-sm aria-pressed:border-accent aria-pressed:text-accent">
+              {m === "back" ? "Crewmate holds the phone" : "Test myself"}
+            </button>
+          ))}
+        </div>
+      )}
+      {ph === "prep" && <Prep key={mode} items={PREP[mode]} onAll={open} />}
+      {note && <p className="text-sm text-dim">{note}</p>}
+      <video ref={vid} playsInline muted autoPlay className={`order-none aspect-[4/3] w-full ${back ? "" : "-scale-x-100"} rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
 
       {ph !== "prep" && (
         <>
@@ -145,7 +202,7 @@ export default function PupilLab() {
             ))}
           </div>
           {ph === "align" && <Status checks={checks} count={count} />}
-          {ph === "align" && <p className="text-sm text-dim">The test starts on its own once everything is ready. Keep looking at the camera when the screen goes dark, then bright.</p>}
+          {ph === "align" && <p className="text-sm text-dim">{back ? "The test starts on its own once everything is ready. The flash comes on for 2.5 seconds; keep the eye open." : "The test starts on its own once everything is ready. Keep looking at the camera when the screen goes dark, then bright."}</p>}
         </>
       )}
 
