@@ -120,8 +120,9 @@ describe("camera and sensor flags", () => {
 });
 
 describe("in space", () => {
+  const sp = (day: number, res: Partial<Results> = {}) => ex({ hr: { sit: NaN, stand: NaN }, bal: { sway: "none", secs: 0 }, space: true, ...res } as Partial<Results>, day);
+
   it("skips gravity stations without polluting the baseline", () => {
-    const sp = (day: number) => ex({ hr: { sit: NaN, stand: NaN }, bal: { sway: "none", secs: 0 }, space: true } as Partial<Results>, day);
     const g1 = ex({}, 1), g2 = ex({}, 2), s3 = sp(3);
     const r = report(s3, [g1, g2, s3]);
     expect(Number.isNaN(r.m.hr)).toBe(true);
@@ -129,5 +130,15 @@ describe("in space", () => {
     expect(r.flags).toEqual([]);
     const s1 = sp(1), s2 = sp(2), g3 = ex({}, 3);
     expect(report(g3, [s1, s2, g3]).base?.hr).toBeNaN();
+  });
+  it("other stations still flag", () => {
+    const e = sp(3, { mood: { sleep: 7, score: 2, note: "" } });
+    expect(ids(report(e, [sp(1), sp(2), e]).flags)).toEqual(["mood_low"]);
+  });
+  it("a space exam in the baseline leaves the heart-rate baseline to surface exams", () => {
+    const e = ex({ hr: { sit: 17, stand: 27 } }, 3);
+    const r = report(e, [ex({}, 1), sp(2), e]);
+    expect(r.base?.hr).toBe(12);
+    expect(ids(r.flags)).toEqual(["hr_high"]);
   });
 });

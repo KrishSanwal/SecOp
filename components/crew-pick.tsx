@@ -1,18 +1,16 @@
 "use client";
 
+import { ArrowsDownUp, Check, Plus } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { listCrew, putCrew, uid } from "@/lib/db";
 import type { Crew } from "@/lib/types";
+import { Bottom, btn, ghost, primary, Tag, tile } from "./ui";
 
 type Slot = "subj" | "exr";
 
 const byName = (xs: Crew[]) => [...xs].sort((a, b) => a.name.localeCompare(b.name));
 const why = (e: unknown, fb: string) => (e instanceof Error ? e.message : fb);
-
-const btn =
-  "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const ghost = `${btn} border border-edge text-ink hover:bg-panel active:bg-rule`;
 
 export default function CrewPick() {
   const [crew, setCrew] = useState<Crew[] | null>(null);
@@ -60,12 +58,12 @@ export default function CrewPick() {
 
   if (err) {
     return (
-      <p role="alert" className="rounded-lg border border-alert/40 p-4 text-alert">
+      <p role="alert" className="border-l-4 border-alert bg-panel p-4 text-alert">
         {err} Reload the page. If it keeps failing, this browser may be blocking storage.
       </p>
     );
   }
-  if (!crew) return <p className="min-h-40 text-dim">Loading crew…</p>;
+  if (!crew) return <p className="min-h-40 font-mono text-dim">Loading crew…</p>;
 
   const s = crew.find((c) => c.id === subj);
   const x = crew.find((c) => c.id === exr);
@@ -75,12 +73,13 @@ export default function CrewPick() {
   return (
     <>
       <section className="flex flex-col items-start gap-4">
+        <Tag tone="accent">crew check ✱ who examines whom</Tag>
         {ready ? (
-          <h1 key={flip} className="text-[2.5rem] leading-[1.15] font-bold tracking-tight text-balance motion-safe:animate-swap">
-            <Blank>{x.name}</Blank> <span className="font-normal text-dim">examines</span> <Blank>{s.name}</Blank>
+          <h1 key={flip} className="text-[2.75rem] leading-[1.15] font-bold text-balance motion-safe:animate-swap">
+            <Blank>{x.name}</Blank> <span className="font-medium text-dim">examines</span> <Blank>{s.name}</Blank>
           </h1>
         ) : (
-          <h1 className="text-[2.5rem] leading-[1.15] font-bold tracking-tight">Set up the exam</h1>
+          <h1 className="text-[2.75rem] leading-[1.05] font-bold uppercase">Set up the exam</h1>
         )}
         <p className="max-w-[36ch] text-lg leading-relaxed text-dim">
           {ready
@@ -91,9 +90,7 @@ export default function CrewPick() {
         </p>
         {ready && (
           <button type="button" onClick={swap} className={ghost}>
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
-            </svg>
+            <ArrowsDownUp size={20} weight="bold" aria-hidden />
             Swap roles
           </button>
         )}
@@ -108,43 +105,31 @@ export default function CrewPick() {
 
       <AddCrew crew={crew} onAdd={add} />
 
-      <div className="sticky bottom-0 -mx-4 mt-auto border-t border-rule bg-cabin/95 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <Bottom>
         {ready ? (
-          <Link
-            href={{ pathname: "/exam", query: { subj: s.id, exr: x.id } }}
-            className={`${btn} min-h-14 w-full bg-accent text-lg text-on-accent hover:brightness-110 active:brightness-95`}
-          >
+          <Link href={{ pathname: "/exam", query: { subj: s.id, exr: x.id } }} className={primary}>
             Start the exam
           </Link>
         ) : (
-          <button type="button" disabled className={`${btn} min-h-14 w-full cursor-not-allowed bg-rule text-lg text-dim`}>
+          <button type="button" disabled className={primary}>
             Start the exam
           </button>
         )}
-      </div>
+      </Bottom>
     </>
   );
 }
 
 function Blank({ children }: { children: ReactNode }) {
-  return <span className="border-b-2 border-edge pb-0.5 [box-decoration-break:clone]">{children}</span>;
+  return <span className="border-b-4 border-accent pb-0.5 text-chalk [box-decoration-break:clone]">{children}</span>;
 }
 
-function Group(p: {
-  n: number;
-  slot: Slot;
-  legend: string;
-  tag: string;
-  crew: Crew[];
-  sel: string;
-  other: string;
-  onPick: (s: Slot, id: string) => void;
-}) {
+function Group(p: { n: number; slot: Slot; legend: string; tag: string; crew: Crew[]; sel: string; other: string; onPick: (s: Slot, id: string) => void }) {
   return (
     <fieldset>
-      <legend className="flex items-baseline gap-3 text-xl font-semibold">
-        <span className="text-dim tabular-nums" aria-hidden>
-          {p.n}
+      <legend className="flex items-baseline gap-3 font-display text-xl font-semibold text-chalk">
+        <span className="font-mono text-sm text-accent" aria-hidden>
+          0{p.n}
         </span>
         {p.legend}
       </legend>
@@ -155,16 +140,12 @@ function Group(p: {
           return (
             <label key={c.id} className="cursor-pointer">
               <input type="radio" name={p.slot} checked={on} onChange={() => p.onPick(p.slot, c.id)} className="peer sr-only" />
-              <span className="flex min-h-18 items-start justify-between gap-2 rounded-lg border border-edge bg-panel px-4 py-3 transition-colors duration-150 peer-checked:border-accent peer-checked:bg-accent/12 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:border-dim active:bg-rule">
+              <span className={`flex min-h-18 items-start justify-between gap-2 px-4 py-3 ${tile}`}>
                 <span className="flex min-w-0 flex-col">
                   <span className="leading-snug font-semibold break-words">{c.name}</span>
                   {note && <span className="text-sm text-dim">{note}</span>}
                 </span>
-                {on && (
-                  <svg viewBox="0 0 24 24" className="mt-0.5 size-5 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12.5l4.5 4.5L19 7.5" />
-                  </svg>
-                )}
+                {on && <Check size={20} weight="bold" className="mt-0.5 shrink-0" aria-hidden />}
               </span>
             </label>
           );
@@ -207,11 +188,9 @@ function AddCrew({ crew, onAdd }: { crew: Crew[]; onAdd: (name: string, role: st
   if (!open && !few) {
     return (
       <div className="flex items-center justify-between gap-4 border-t border-rule pt-6">
-        <p className="text-dim">{crew.length} on the crew</p>
+        <p className="font-mono text-sm text-dim">{crew.length} on the crew</p>
         <button type="button" onClick={() => setOpen(true)} aria-expanded={false} className={ghost}>
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Plus size={20} weight="bold" aria-hidden />
           Add crew member
         </button>
       </div>
@@ -219,13 +198,13 @@ function AddCrew({ crew, onAdd }: { crew: Crew[]; onAdd: (name: string, role: st
   }
 
   const field =
-    "mt-2 min-h-12 w-full rounded-lg border border-edge bg-panel px-4 text-lg text-ink placeholder:text-dim/70 focus:border-accent focus:outline-none aria-[invalid=true]:border-alert";
+    "mt-2 min-h-12 w-full rounded-[3px] border border-edge bg-panel px-4 text-lg text-chalk placeholder:text-dim/70 focus:border-accent focus:outline-none aria-[invalid=true]:border-alert";
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5 border-t border-rule pt-6">
       <h2 className="text-xl font-semibold">Add crew member</h2>
       <div>
-        <label htmlFor={`${id}-n`} className="font-semibold">
+        <label htmlFor={`${id}-n`} className="font-semibold text-chalk">
           Name
         </label>
         <input
@@ -250,7 +229,7 @@ function AddCrew({ crew, onAdd }: { crew: Crew[]; onAdd: (name: string, role: st
         )}
       </div>
       <div>
-        <label htmlFor={`${id}-r`} className="font-semibold">
+        <label htmlFor={`${id}-r`} className="font-semibold text-chalk">
           Role <span className="font-normal text-dim">(optional)</span>
         </label>
         <input
@@ -264,7 +243,7 @@ function AddCrew({ crew, onAdd }: { crew: Crew[]; onAdd: (name: string, role: st
         />
       </div>
       <div className="flex gap-2">
-        <button type="submit" className={`${btn} flex-1 bg-panel text-accent ring-1 ring-accent/60 hover:bg-accent/12 active:bg-rule`}>
+        <button type="submit" className={`${btn} flex-1 border border-accent text-accent hover:bg-accent/10 active:bg-rule`}>
           Add to crew
         </button>
         {!few && (

@@ -7,7 +7,7 @@ import { examsOf, getCrew } from "@/lib/db";
 import { insights, META, series, type Point } from "@/lib/insights";
 import { LIMITS } from "@/lib/scoring";
 import type { Crew, Exam } from "@/lib/types";
-import { ghost } from "./ui";
+import { Back, ghost, Tag } from "./ui";
 
 export default function Trend() {
   const id = useSearchParams().get("crew");
@@ -33,8 +33,9 @@ export default function Trend() {
   return (
     <>
       <header className="flex flex-col gap-2">
-        <Link href="/" className="w-fit text-dim hover:text-ink">← Crew</Link>
-        <h1 className="text-[2.25rem] leading-tight font-bold tracking-tight">{name} over time</h1>
+        <Back href="/" label="Crew" />
+        <Tag tone="accent">trends ✱ {name}</Tag>
+        <h1 className="text-[2.5rem] leading-[1.05] font-bold uppercase">{name} over time</h1>
         <p className="text-dim">
           {d.hist.length} {d.hist.length === 1 ? "exam" : "exams"}. The shaded line is {name}&apos;s usual, from the first {LIMITS.baseN}.
         </p>
@@ -42,10 +43,12 @@ export default function Trend() {
 
       {tips.length > 0 && (
         <section className="flex flex-col gap-2" aria-labelledby="noticed">
-          <h2 id="noticed" className="text-xl font-semibold">What we noticed</h2>
+          <h2 id="noticed" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
+            <span aria-hidden>{"// "}</span>what we noticed
+          </h2>
           <ul className="flex flex-col gap-2">
             {tips.map((t) => (
-              <li key={t} className="border-l-2 border-accent pl-3">{t}</li>
+              <li key={t} className="border-l-2 border-accent pl-3 text-lg">{t}</li>
             ))}
           </ul>
         </section>
@@ -61,12 +64,12 @@ export default function Trend() {
           return (
             <li key={m.k} className="flex flex-col gap-2 py-4">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-semibold">{m.t}</span>
-                <span className="tabular-nums">{m.fmt(last.v)}</span>
+                <span className="font-semibold text-chalk">{m.t}</span>
+                <span className="font-mono text-chalk tabular-nums">{m.fmt(last.v)}</span>
               </div>
               {p.length >= 2 && <Spark p={p} base={base} worse={m.worse} />}
-              <p className="text-sm text-dim">
-                {base != null ? `Usual ${m.fmt(base)}` : "No usual yet"} · {m.worse > 0 ? "lower is better" : "higher is better"}
+              <p className="font-mono text-sm text-dim">
+                {base != null ? `Usual ${m.fmt(base)}` : "No usual yet"}. {m.worse > 0 ? "Lower is better" : "Higher is better"}
               </p>
             </li>
           );
@@ -90,7 +93,7 @@ function Spark({ p, base, worse }: { p: Point[]; base: number | null; worse: 1 |
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-16 w-full" role="img" aria-label="Trend">
       {base != null && <line x1={pad} x2={W - pad} y1={y(base)} y2={y(base)} stroke="var(--edge)" strokeWidth="6" strokeLinecap="round" opacity="0.5" />}
-      <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" />
+      <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" style={{ filter: "drop-shadow(0 0 4px rgb(242 255 61 / 0.6))" }} />
       {p.map((pt, i) => (
         <circle key={i} cx={x(i)} cy={y(pt.v)} r="3.5" fill={bad(pt.v) ? "var(--alert)" : "var(--accent)"} />
       ))}

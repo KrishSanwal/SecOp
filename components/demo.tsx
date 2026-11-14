@@ -24,7 +24,7 @@ export default function Demo() {
   }
 
   return (
-    <button type="button" onClick={go} disabled={busy} className="ml-auto min-h-11 rounded-lg border border-edge px-3 text-sm font-medium text-dim transition-colors hover:border-dim hover:text-foreground disabled:opacity-50">
+    <button type="button" onClick={go} disabled={busy} className="min-h-11 rounded-[3px] border border-accent px-3 text-sm font-semibold whitespace-nowrap text-accent transition-colors hover:bg-accent/10 disabled:opacity-50">
       {busy ? "Loading…" : "Try demo"}
     </button>
   );
