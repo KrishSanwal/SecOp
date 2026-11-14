@@ -27,7 +27,7 @@ export async function openRear() {
 }
 
 /** Sample the camera for `secs` and return heart rate. `tick` reports live progress. */
-export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: number; on: boolean; bpm: number }) => void): PpgRun {
+export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: number; on: boolean; hard: boolean; bpm: number }) => void): PpgRun {
   const c = document.createElement("canvas");
   c.width = c.height = 40;
   const ctx = c.getContext("2d", { willReadFrequently: true })!;
@@ -51,7 +51,7 @@ export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: num
         r /= d.length / 4; g /= d.length / 4;
         const on = r > 100 && g < r * 0.6; // lens covered by a lit fingertip
         tr.push({ t, v: r, on });
-        if (tick && tr.length % 15 === 0) tick({ t, on, bpm: analyse(tr.slice(-180)).bpm });
+        if (tick && tr.length % 15 === 0) tick({ t, on, hard: on && r > 248 && g < 8, bpm: analyse(tr.slice(-180)).bpm });
       }
       requestAnimationFrame(step);
     };
@@ -98,9 +98,9 @@ export async function closeRear(s: MediaStream | null) {
   s.getTracks().forEach((t) => t.stop());
 }
 
-/** Is a lit fingertip covering the lens right now? */
-export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): boolean {
-  if (v.readyState < 2) return false;
+/** Is a lit fingertip covering the lens, and is it pressed so hard the image saturates? */
+export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): { on: boolean; hard: boolean } {
+  if (v.readyState < 2) return { on: false, hard: false };
   c.width = c.height = 20;
   const ctx = c.getContext("2d", { willReadFrequently: true })!;
   const w = v.videoWidth, h = v.videoHeight, s = Math.min(w, h) / 2;
@@ -108,5 +108,8 @@ export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): boolean {
   const d = ctx.getImageData(0, 0, 20, 20).data;
   let r = 0, g = 0;
   for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; }
-  return r / 400 > 100 && g < r * 0.6;
+  r /= 400; g /= 400;
+  const on = r > 100 && g < r * 0.6;
+  // Red pinned near 255 with almost no green = blood squeezed out or sensor clipped: no pulse visible.
+  return { on, hard: on && r > 248 && g < 8 };
 }

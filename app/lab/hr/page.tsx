@@ -21,6 +21,7 @@ export default function HrLab() {
   const [ph, setPh] = useState<Ph>("prep");
   const [torch, setTorch] = useState(true);
   const [on, setOn] = useState(false);
+  const [hard, setHard] = useState(false);
   const [count, setCount] = useState<number | null>(null);
   const [left, setLeft] = useState(SECS);
   const [out, setOut] = useState<PpgResult | null>(null);
@@ -66,8 +67,9 @@ export default function HrLab() {
     s.on = 0;
     s.timer = setInterval(() => {
       const f = finger(vid.current!, cv.current!);
-      setOn(f);
-      s.on = f ? s.on + 1 : 0;
+      setOn(f.on);
+      setHard(f.hard);
+      s.on = f.on && !f.hard ? s.on + 1 : 0;
       if (s.on >= 6 && !s.busy) run();
     }, 150);
   }
@@ -78,7 +80,7 @@ export default function HrLab() {
     for (const n of [3, 2, 1]) {
       setCount(n);
       await wait(600);
-      if (!finger(vid.current!, cv.current!)) {
+      if (!finger(vid.current!, cv.current!).on) {
         setCount(null);
         s.busy = false;
         return;
@@ -91,6 +93,7 @@ export default function HrLab() {
     const r = measureHr(vid.current!, SECS, (p) => {
       setLeft(Math.max(0, Math.ceil(SECS - p.t / 1000)));
       setOn(p.on);
+      setHard(p.hard);
     });
     const res = await r.done;
     beep(990, 140);
@@ -120,14 +123,14 @@ export default function HrLab() {
           {ph === "align" && (
             <>
               <p>Cover the back camera <b>and</b> the flash with the pad of your index finger. Press lightly; pressing hard stops the blood flow.</p>
-              <Status checks={[{ ok: on, fix: "Cover the camera fully with your fingertip" }]} count={count} />
+              <Status checks={[{ ok: on, fix: "Cover the camera fully with your fingertip" }, { ok: !hard, fix: "Press more lightly" }]} count={count} />
             </>
           )}
           {ph === "run" && (
             <div className="rounded-lg border border-accent p-4" role="status">
               <p className="text-sm text-accent">Measuring</p>
               <p className="text-4xl font-semibold tabular-nums">{left}s</p>
-              <p className={on ? "text-dim" : "text-alert"}>{on ? "Keep still, don't press harder" : "Finger moved: cover the camera again"}</p>
+              <p className={on && !hard ? "text-dim" : "text-alert"}>{!on ? "Finger moved: cover the camera again" : hard ? "Press more lightly" : "Keep still, don't press harder"}</p>
             </div>
           )}
         </>
