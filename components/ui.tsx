@@ -9,7 +9,7 @@ export const btn =
 export const ghost = `${btn} border border-edge text-ink hover:bg-panel active:bg-rule`;
 export const primary = `${btn} min-h-14 w-full bg-accent text-lg text-on-accent hover:brightness-110 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:hover:brightness-100`;
 
-export const Talk = createContext<(id: PromptId) => Promise<void>>(say);
+export const Talk = createContext<(id: PromptId) => Promise<boolean>>(say);
 
 export function Cue({ id, big }: { id: PromptId; big?: boolean }) {
   const talk = useContext(Talk);
@@ -32,8 +32,7 @@ export function useCues(...ids: PromptId[]) {
     let live = true;
     (async () => {
       for (const id of key.split(",") as PromptId[]) {
-        if (!live) return;
-        await talk(id);
+        if (!live || !(await talk(id))) return;
       }
     })();
     return () => {

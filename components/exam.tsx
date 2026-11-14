@@ -54,7 +54,7 @@ export default function Exam() {
     };
   }, []);
 
-  const talk = useCallback((id: PromptId) => (on.current ? say(id) : Promise.resolve()), []);
+  const talk = useCallback((id: PromptId) => (on.current ? say(id) : Promise.resolve(true)), []);
 
   function mute() {
     on.current = !voice;
