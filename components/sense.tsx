@@ -1,0 +1,233 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { closeRear, finger, measureHr, openRear, type PpgRun } from "@/lib/ppg";
+import { measureSway, type SwayResult } from "@/lib/sway";
+import { beep, Status, Verdict, wait } from "./lab";
+import { Big, ghost } from "./ui";
+
+const HR_SECS = 20;
+const BAL_SECS = 30;
+
+function Fail({ why, again, other, otherLabel }: { why: string; again: () => void; other: () => void; otherLabel: string }) {
+  return (
+    <>
+      <Verdict tone="fail" title="Couldn't measure" body={why} again={again} againLabel="Try again" note="Or switch to the manual method below. It scores the same way." />
+      <button type="button" onClick={other} className={ghost}>
+        {otherLabel}
+      </button>
+    </>
+  );
+}
+
+// Fingertip over the back camera with the torch on; resolves one heart rate.
+export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHand: () => void }) {
+  const vid = useRef<HTMLVideoElement>(null);
+  const cv = useRef<HTMLCanvasElement>(null);
+  const read = useRef(onRead);
+  const [go, setGo] = useState(0);
+  const [ph, setPh] = useState<"open" | "align" | "run" | "fail">("open");
+  const [torch, setTorch] = useState(true);
+  const [on, setOn] = useState(false);
+  const [hard, setHard] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+  const [left, setLeft] = useState(HR_SECS);
+  const [why, setWhy] = useState("");
+  useEffect(() => {
+    read.current = onRead;
+  });
+
+  useEffect(() => {
+    const k = { live: true, s: null as MediaStream | null, run: null as PpgRun | null };
+    (async () => {
+      try {
+        const { s, torch } = await openRear();
+        if (!k.live) return closeRear(s);
+        k.s = s;
+        setTorch(torch);
+        const v = vid.current!;
+        v.srcObject = s;
+        await v.play().catch(() => {});
+        setPh("align");
+
+        for (let ok = 0; k.live; ) {
+          await wait(150);
+          const f = finger(v, cv.current!);
+          setOn(f.on);
+          setHard(f.hard);
+          ok = f.on && !f.hard ? ok + 1 : 0;
+          if (ok < 6) continue;
+          let held = true;
+          for (const n of [3, 2, 1]) {
+            setCount(n);
+            beep(660, 90);
+            await wait(600);
+            if (!k.live) return;
+            if (!finger(v, cv.current!).on) held = false;
+          }
+          setCount(null);
+          if (held) break;
+          ok = 0;
+        }
+        if (!k.live) return;
+
+        beep(880, 120);
+        setPh("run");
+        k.run = measureHr(v, HR_SECS, (p) => {
+          setLeft(Math.max(0, Math.ceil(HR_SECS - p.t / 1000)));
+          setOn(p.on);
+          setHard(p.hard);
+        });
+        const r = await k.run.done;
+        if (!k.live) return;
+        beep(990, 140);
+        await closeRear(k.s);
+        k.s = null;
+        if (!Number.isFinite(r.bpm) || r.q < 0.6) {
+          setWhy(r.q < 0.6 ? "The fingertip was off the camera for much of the reading. Rest the hand on a table and try again." : "The pulse signal was too noisy. Press more lightly, keep completely still, and try again.");
+          setPh("fail");
+          return;
+        }
+        read.current(r.bpm);
+      } catch (e) {
+        await closeRear(k.s);
+        k.s = null;
+        if (!k.live) return;
+        const m = e instanceof Error ? e : new Error(String(e));
+        setWhy(
+          m.name === "NotAllowedError"
+            ? "Camera permission was blocked. Allow it in the browser settings, or count by hand."
+            : m.name === "NotReadableError"
+              ? "Another app is using the camera. Close it and try again."
+              : `Could not open the back camera: ${m.message || m.name}`,
+        );
+        setPh("fail");
+      }
+    })();
+    return () => {
+      k.live = false;
+      k.run?.stop();
+      closeRear(k.s);
+    };
+  }, [go]);
+
+  function again() {
+    setPh("open");
+    setLeft(HR_SECS);
+    setGo((g) => g + 1);
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {ph === "open" && <p className="text-dim">Opening the back camera…</p>}
+      {ph === "align" && (
+        <>
+          {!torch && <p className="text-alert">This browser can&apos;t turn on the flash. Use a bright room, or try Chrome on Android.</p>}
+          <p className="text-lg">Cover the back camera and the flash with a fingertip. Press lightly and keep still.</p>
+          <Status checks={[{ ok: on, fix: "Cover the camera fully with a fingertip" }, { ok: !hard, fix: "Press more lightly" }]} count={count} />
+          <button type="button" onClick={onHand} className={`${ghost} text-dim`}>
+            Count the pulse by hand instead
+          </button>
+        </>
+      )}
+      {ph === "run" && (
+        <div role="status" className="flex flex-col gap-2">
+          <p className="text-dim">Reading the pulse</p>
+          <Big>{left}s</Big>
+          <p className={on && !hard ? "text-dim" : "text-alert"}>{!on ? "Finger moved: cover the camera again" : hard ? "Press more lightly" : "Keep still"}</p>
+        </div>
+      )}
+      {ph === "fail" && <Fail why={why} again={again} other={onHand} otherLabel="Count the pulse by hand" />}
+      <video ref={vid} playsInline muted autoPlay className="hidden" />
+      <canvas ref={cv} className="hidden" />
+    </div>
+  );
+}
+
+// Phone flat on the chest, eyes closed. Motion permission must already be granted (askMotion from a tap).
+export function MotionBal({ onRead, onHand }: { onRead: (r: SwayResult) => void; onHand: () => void }) {
+  const read = useRef(onRead);
+  const [go, setGo] = useState(0);
+  const [ph, setPh] = useState<"settle" | "run" | "fail">("settle");
+  const [still, setStill] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+  const [left, setLeft] = useState(BAL_SECS);
+  const [why, setWhy] = useState("");
+  useEffect(() => {
+    read.current = onRead;
+  });
+
+  useEffect(() => {
+    const k = { live: true, stop: () => {} };
+    (async () => {
+      for (let ok = 0; ok < 2; ) {
+        const r = await measureSway(1.2).done;
+        if (!k.live) return;
+        if (r.dead) {
+          setWhy("The motion sensor sent no data. Try again, or rate the sway by eye.");
+          setPh("fail");
+          return;
+        }
+        setStill(r.rms < 0.3);
+        ok = r.rms < 0.3 ? ok + 1 : 0;
+      }
+      for (const n of [3, 2, 1]) {
+        setCount(n);
+        beep(660, 90);
+        await wait(800);
+        if (!k.live) return;
+      }
+      setCount(null);
+      beep(440, 500);
+      navigator.vibrate?.(300);
+      setPh("run");
+      const m = measureSway(BAL_SECS, (p) => setLeft(Math.max(0, Math.ceil(BAL_SECS - p.t / 1000))));
+      k.stop = m.stop;
+      const r = await m.done;
+      if (!k.live) return;
+      beep(990, 150);
+      await wait(200);
+      beep(990, 150);
+      navigator.vibrate?.([150, 100, 150]);
+      if (r.dead || r.n < 20) {
+        setWhy("The motion sensor didn't send enough data. Try again, or rate the sway by eye.");
+        setPh("fail");
+        return;
+      }
+      read.current(r);
+    })();
+    return () => {
+      k.live = false;
+      k.stop();
+    };
+  }, [go]);
+
+  function again() {
+    setPh("settle");
+    setStill(false);
+    setLeft(BAL_SECS);
+    setGo((g) => g + 1);
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {ph === "settle" && (
+        <>
+          <p className="text-lg">Hold the phone flat on your chest with both hands, feet together. Close your eyes at the long beep. Open them at two short beeps.</p>
+          <Status checks={[{ ok: still, fix: "Hold the phone still against the chest" }]} count={count} />
+          <button type="button" onClick={onHand} className={`${ghost} text-dim`}>
+            Rate the sway by eye instead
+          </button>
+        </>
+      )}
+      {ph === "run" && (
+        <div role="status" className="flex flex-col gap-2">
+          <p className="text-dim">Eyes closed, hold still</p>
+          <Big>{left}s</Big>
+          <p className="text-dim">Examiner, stand close. If they step, the test stops on its own.</p>
+        </div>
+      )}
+      {ph === "fail" && <Fail why={why} again={again} other={onHand} otherLabel="Rate the sway by eye" />}
+    </div>
+  );
+}

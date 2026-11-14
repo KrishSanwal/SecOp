@@ -1,19 +1,33 @@
 "use client";
 
+import { Eye, Heartbeat, Lightning, MoonStars, PersonSimple, SpeakerHigh, SpeakerSlash, type Icon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getCrew, putExam, uid } from "@/lib/db";
 import type { PromptId } from "@/lib/prompts";
 import { hush, say } from "@/lib/say";
-import { median } from "@/lib/scoring";
+import { LIMITS, median } from "@/lib/scoring";
+import { askMotion } from "@/lib/sway";
 import type { Crew, Pupil, Results, Sway } from "@/lib/types";
-import { Bottom, btn, Choice, Cue, ghost, primary, Stepper, Talk, Timed, useCues } from "./ui";
+import { Prep, Verdict, type Tone } from "./lab";
+import { CamHr, MotionBal } from "./sense";
+import { Back, Bottom, btn, Choice, Cue, ghost, primary, Stepper, Tag, Talk, Timed, useCues } from "./ui";
 
-const STATIONS = ["Pupils", "Heart rate", "Balance", "Sleep and mood", "Reaction"] as const;
-const HINTS = ["Light reaction in each eye", "Sitting, then standing", "Eyes closed, 30 seconds", "Three questions", "Ten taps"];
-
+type Key = "pupils" | "hr" | "bal" | "mood" | "rx";
 type Part = Partial<Results>;
+type Step = { onDone: (p: Part) => void; next: string };
+
+const ALL: { k: Key; t: string; h: string; I: Icon }[] = [
+  { k: "pupils", t: "Pupils", h: "Light reaction in each eye", I: Eye },
+  { k: "hr", t: "Heart rate", h: "Fingertip on the back camera", I: Heartbeat },
+  { k: "bal", t: "Balance", h: "Phone on chest, eyes closed", I: PersonSimple },
+  { k: "mood", t: "Sleep and mood", h: "Three questions", I: MoonStars },
+  { k: "rx", t: "Reaction", h: "Ten taps", I: Lightning },
+];
+
+const NOTE = "A rough guide, not a diagnosis. The result card compares this with their usual.";
+const WHERE = "so-where";
 
 export default function Exam() {
   const q = useSearchParams();
@@ -27,8 +41,16 @@ export default function Exam() {
   const on = useRef(true);
   const [saved, setSaved] = useState("");
   const [leave, setLeave] = useState(false);
+  const [where, setWhere] = useState<"surface" | "transit">(() => {
+    try {
+      return localStorage.getItem(WHERE) === "transit" ? "transit" : "surface";
+    } catch {
+      return "surface";
+    }
+  });
   const ok = sid && xid && sid !== xid;
   const bad = ok ? err : "Pick two different crew members first.";
+  const list = where === "transit" ? ALL.filter((s) => s.k !== "hr" && s.k !== "bal") : ALL;
 
   useEffect(() => {
     if (!ok) return;
@@ -62,10 +84,28 @@ export default function Exam() {
     setVoice(!voice);
   }
 
+  function pick(w: "surface" | "transit") {
+    setWhere(w);
+    try {
+      localStorage.setItem(WHERE, w);
+    } catch {}
+  }
+
+  function back() {
+    hush();
+    setLeave(false);
+    if (n > 0) setN(n - 1);
+    else setLeave(true);
+  }
+
   async function next(p: Part) {
     const all = { ...res, ...p };
     setRes(all);
-    if (n < STATIONS.length - 1) return setN(n + 1);
+    if (n < list.length - 1) return setN(n + 1);
+    if (where === "transit") {
+      all.hr = { sit: NaN, stand: NaN };
+      all.bal = { sway: "none", secs: 0 };
+    }
     const id = uid();
     try {
       await putExam({ id, subj: sid, exr: xid, at: Date.now(), res: all as Results });
@@ -79,113 +119,135 @@ export default function Exam() {
   if (bad) {
     return (
       <div className="flex flex-col items-start gap-4">
+        <Back href="/" label="Crew" />
+        <Tag tone="alert">can&apos;t start</Tag>
         <h1 className="text-3xl font-bold">Can&apos;t start the exam</h1>
         <p role="alert" className="text-lg text-alert">
           {bad}
         </p>
-        <Link href="/" className={ghost}>
-          Back to crew
-        </Link>
       </div>
     );
   }
-  if (!pair) return <p className="text-dim">Loading exam…</p>;
+  if (!pair) return <p className="font-mono text-dim">Loading exam…</p>;
   const [s, x] = pair;
 
   if (saved) {
     return (
       <>
+        <Back href="/" label="Crew" />
         <section className="flex flex-col items-start gap-4">
-          <svg viewBox="0 0 24 24" className="size-14 text-accent" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <circle cx="12" cy="12" r="10" />
-            <path d="M7.5 12.5l3 3 6-6.5" />
-          </svg>
-          <h1 className="text-[2.5rem] leading-[1.15] font-bold tracking-tight">Exam complete</h1>
+          <Tag tone="accent">exam saved</Tag>
+          <h1 className="text-[2.75rem] leading-[1.05] font-bold uppercase">Exam complete</h1>
           <p className="text-lg text-dim">Saved on this device. Swap roles when you are ready.</p>
         </section>
         <Bottom>
           <Link href={{ pathname: "/result", query: { id: saved } }} className={primary}>
-            See results
+            Show results
           </Link>
         </Bottom>
       </>
     );
   }
 
+  const st = list[n];
+  const nx = n < list.length - 1 ? `Continue to ${list[n + 1].t.toLowerCase()}` : "Finish and save";
+
   return (
     <Talk.Provider value={talk}>
       <div className="flex items-center justify-between gap-2">
-        {leave ? (
-          <div className="flex items-center gap-2" role="group" aria-label="Leave the exam?">
-            <Link href="/" className={`${ghost} border-alert/60 text-alert`}>
-              Leave, discard
-            </Link>
-            <button type="button" onClick={() => setLeave(false)} className={ghost}>
-              Stay
-            </button>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setLeave(true)} className={`${btn} -ml-3 text-dim hover:text-ink`}>
-            Exit
-          </button>
-        )}
-        <button type="button" aria-pressed={voice} onClick={mute} className={`${btn} -mr-3 text-dim hover:text-ink`}>
-          {voice ? "Voice on" : "Voice off"}
+        {n < 0 ? <Back href="/" label="Crew" /> : <Back onClick={back} label={n === 0 ? "Leave" : "Back"} />}
+        <button type="button" aria-pressed={!voice} onClick={mute} className={`${btn} -mr-3 px-3 text-dim hover:text-accent`}>
+          {voice ? <SpeakerHigh size={20} weight="bold" aria-hidden /> : <SpeakerSlash size={20} weight="bold" aria-hidden />}
+          {voice ? "Mute voice" : "Unmute voice"}
         </button>
       </div>
 
+      {leave && (
+        <div role="alertdialog" aria-label="Leave the exam?" className="flex flex-col gap-3 border-l-4 border-alert bg-panel p-4">
+          <p className="font-semibold text-chalk">Leave the exam? Nothing is saved yet.</p>
+          <div className="flex gap-2">
+            <Link href="/" className={`${ghost} flex-1 border-alert text-alert hover:border-alert hover:text-alert`}>
+              Leave, discard
+            </Link>
+            <button type="button" onClick={() => setLeave(false)} className={`${ghost} flex-1`}>
+              Stay
+            </button>
+          </div>
+        </div>
+      )}
+
       {n < 0 ? (
-        <Intro s={s} x={x} onGo={() => setN(0)} />
+        <Intro s={s} x={x} list={list} where={where} onWhere={pick} onGo={() => setN(0)} />
       ) : (
         <>
           <header className="flex flex-col gap-3">
-            <ol className="grid grid-cols-5 gap-1.5" aria-label="Stations">
-              {STATIONS.map((t, i) => (
-                <li key={t} aria-current={i === n ? "step" : undefined} className={`h-1.5 rounded-full ${i <= n ? "bg-accent" : "bg-rule"}`}>
+            <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${list.length}, 1fr)` }} aria-label="Stations">
+              {list.map((t, i) => (
+                <li key={t.k} aria-current={i === n ? "step" : undefined} className={`h-1.5 ${i < n ? "bg-accent" : i === n ? "bg-accent shadow-[0_0_10px_rgb(242_255_61/0.7)]" : "bg-rule"}`}>
                   <span className="sr-only">
-                    {t}
+                    {t.t}
                     {i < n ? ", done" : ""}
                   </span>
                 </li>
               ))}
             </ol>
+            <Tag tone="accent">
+              station {String(n + 1).padStart(2, "0")} of {String(list.length).padStart(2, "0")}
+            </Tag>
+            <h1 className="flex items-center gap-3 text-[2.5rem] leading-none font-bold uppercase">
+              <st.I size={36} weight="bold" className="shrink-0 text-accent" aria-hidden />
+              {st.t}
+            </h1>
             <p className="text-dim">
-              Station {n + 1} of 5. {x.name} examines {s.name}.
+              {x.name} examines {s.name}.
             </p>
-            <h1 className="text-[2.25rem] leading-tight font-bold tracking-tight">{STATIONS[n]}</h1>
           </header>
-          {n === 0 && <Pupils key="p" onDone={next} />}
-          {n === 1 && <Heart key="h" onDone={next} />}
-          {n === 2 && <Balance key="b" onDone={next} />}
-          {n === 3 && <Mood key="m" onDone={next} />}
-          {n === 4 && <React10 key="r" onDone={next} />}
+          {st.k === "pupils" && <Pupils key={`p${n}`} onDone={next} next={nx} />}
+          {st.k === "hr" && <Heart key={`h${n}`} onDone={next} next={nx} />}
+          {st.k === "bal" && <Balance key={`b${n}`} onDone={next} next={nx} />}
+          {st.k === "mood" && <Mood key={`m${n}`} onDone={next} next={nx} />}
+          {st.k === "rx" && <React10 key={`r${n}`} onDone={next} next={nx} />}
         </>
       )}
     </Talk.Provider>
   );
 }
 
-function Intro({ s, x, onGo }: { s: Crew; x: Crew; onGo: () => void }) {
+function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "transit"; onWhere: (w: "surface" | "transit") => void; onGo: () => void }) {
   useCues("start");
   return (
     <>
       <section className="flex flex-col gap-6">
-        <h1 className="text-[2.5rem] leading-[1.15] font-bold tracking-tight text-balance">
-          {x.name} <span className="font-normal text-dim">examines</span> {s.name}
+        <Tag tone="accent">peer exam ✱ about five minutes</Tag>
+        <h1 className="text-[2.75rem] leading-[1.15] font-bold text-balance">
+          <span className="border-b-4 border-accent">{p.x.name}</span> <span className="font-medium text-dim">examines</span>{" "}
+          <span className="border-b-4 border-accent">{p.s.name}</span>
         </h1>
         <Cue id="start" />
+        <Choice
+          name="where"
+          legend="Where is the crew?"
+          cols="grid-cols-2"
+          value={p.where}
+          onChange={p.onWhere}
+          opts={[
+            ["surface", "On a surface", "or after landing: all five"],
+            ["transit", "In transit", "weightless: skips heart and balance"],
+          ]}
+        />
         <ol className="flex flex-col divide-y divide-rule border-y border-rule">
-          {STATIONS.map((t, i) => (
-            <li key={t} className="flex items-baseline gap-4 py-3">
-              <span className="w-4 text-dim tabular-nums">{i + 1}</span>
-              <span className="font-semibold">{t}</span>
-              <span className="ml-auto text-right text-dim">{HINTS[i]}</span>
+          {p.list.map((t, i) => (
+            <li key={t.k} className="flex items-center gap-4 py-3">
+              <span className="w-7 font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+              <t.I size={22} weight="bold" className="shrink-0 text-dim" aria-hidden />
+              <span className="font-semibold text-chalk">{t.t}</span>
+              <span className="ml-auto text-right text-sm text-dim">{t.h}</span>
             </li>
           ))}
         </ol>
       </section>
       <Bottom>
-        <button type="button" onClick={onGo} className={primary}>
+        <button type="button" onClick={p.onGo} className={primary}>
           Begin station 1
         </button>
       </Bottom>
@@ -193,25 +255,47 @@ function Intro({ s, x, onGo }: { s: Crew; x: Crew; onGo: () => void }) {
   );
 }
 
-function Pupils({ onDone }: { onDone: (p: Part) => void }) {
-  const [step, setStep] = useState<"left" | "right" | "rate">("left");
+function Done({ next, onClick, disabled }: { next: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <Bottom>
+      <button type="button" onClick={onClick} disabled={disabled} className={primary}>
+        {next}
+      </button>
+    </Bottom>
+  );
+}
+
+const PREP = {
+  pupils: ["Dim the room lights if you can", "Subject's glasses off", "Examiner at the subject's eye level", "A penlight or a second phone's torch in hand"],
+  hr: ["Subject sits and rests for a minute", "Arm resting on a table, hand relaxed", "Warm hands: rub them if they are cold", "Find the back camera and the flash next to it"],
+  bal: ["Shoes off, on a flat floor", "Clear space; examiner within arm's reach", "Sound on: beeps say when to close and open eyes", "Phone flat on the middle of the chest, both hands", "Feet together, arms in, look straight ahead"],
+  rx: ["Subject sits", "Phone flat on a table in front of them", "No distractions; everyone else quiet"],
+};
+
+function Pupils({ onDone, next }: Step) {
+  const [step, setStep] = useState<"prep" | "left" | "right" | "rate" | "verdict">("prep");
   const [l, setL] = useState<Pupil | null>(null);
   const [r, setR] = useState<Pupil | null>(null);
   const talk = useContext(Talk);
-  useCues("pupil_intro", "pupil_left");
   const opts: [Pupil, string, string][] = [
     ["brisk", "Brisk", "shrinks fast"],
     ["sluggish", "Sluggish", "shrinks slowly"],
     ["unequal", "Unequal", "size differs"],
   ];
-  const go = (s: typeof step, id: PromptId) => {
+  const go = (s: typeof step, id?: PromptId) => {
     setStep(s);
-    talk(id);
+    if (id) talk(id);
   };
+  const start = async () => {
+    setStep("left");
+    if (await talk("pupil_intro")) talk("pupil_left");
+  };
+  const fine = l === "brisk" && r === "brisk";
 
   return (
     <>
       <section className="flex flex-col gap-6">
+        {step === "prep" && <Prep items={PREP.pupils} onAll={start} />}
         {step === "left" && (
           <>
             <Cue id="pupil_intro" />
@@ -226,89 +310,191 @@ function Pupils({ onDone }: { onDone: (p: Part) => void }) {
             <Choice name="pr" legend="Right eye" opts={opts} value={r} onChange={setR} />
           </>
         )}
+        {step === "verdict" && (
+          <Verdict
+            tone={fine ? "ok" : "check"}
+            title={fine ? "Looks normal" : "Worth a recheck"}
+            body={fine ? "Both pupils shrank briskly in the light." : "One or both pupils were slow or unequal. Recheck in dim light; the result card has what to do."}
+            nums={[
+              ["Left eye", l ?? "–"],
+              ["Right eye", r ?? "–"],
+            ]}
+            again={() => {
+              setL(null);
+              setR(null);
+              go("left", "pupil_left");
+            }}
+            note={NOTE}
+          />
+        )}
       </section>
-      <Bottom>
-        {step === "left" && (
+      {step === "left" && (
+        <Bottom>
           <button type="button" onClick={() => go("right", "pupil_right")} className={primary}>
-            Done, right eye next
+            Check the right eye
           </button>
-        )}
-        {step === "right" && (
+        </Bottom>
+      )}
+      {step === "right" && (
+        <Bottom>
           <button type="button" onClick={() => go("rate", "pupil_rate")} className={primary}>
-            Done, rate the pupils
+            Rate the pupils
           </button>
-        )}
-        {step === "rate" && (
-          <button type="button" disabled={!l || !r} onClick={() => l && r && onDone({ pupils: { l, r } })} className={primary}>
-            {l && r ? "Next: heart rate" : "Rate both eyes"}
+        </Bottom>
+      )}
+      {step === "rate" && (
+        <Bottom>
+          <button type="button" disabled={!l || !r} onClick={() => setStep("verdict")} className={primary}>
+            {l && r ? "Save the rating" : "Rate both eyes"}
           </button>
-        )}
-      </Bottom>
+        </Bottom>
+      )}
+      {step === "verdict" && l && r && <Done next={next} onClick={() => onDone({ pupils: { l, r } })} />}
     </>
   );
 }
+
+type Read = { n: number; cam: boolean };
 
 const okCount = (v: string) => {
   const n = Number(v);
   return Number.isInteger(n) && n >= 5 && n <= 60;
 };
 
-function Count({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+function CamReading({ which, onRead, onHand }: { which: "sit" | "stand"; onRead: (r: Read) => void; onHand: () => void }) {
+  useCues(which === "sit" ? "hr_cam" : "hr_cam_again");
+  return <CamHr onRead={(bpm) => onRead({ n: bpm / 4, cam: true })} onHand={onHand} />;
+}
+
+function HandReading({ which, onRead }: { which: "sit" | "stand"; onRead: (r: Read) => void }) {
+  const [st, setSt] = useState<"ready" | "count" | "enter">("ready");
+  const [v, setV] = useState("");
+  const word = which === "sit" ? "sitting" : "standing";
   return (
     <>
-      <Stepper id={id} label={label} hint="Beats counted in 15 seconds" value={value} onChange={onChange} min={5} max={60} step={1} start={18} />
-      <p className="text-dim" aria-live="polite">
-        {okCount(value) ? `That is ${Number(value) * 4} beats per minute.` : value ? "Enter a count from 5 to 60." : ""}
-      </p>
+      <section className="flex flex-col gap-4">
+        {st === "ready" && (which === "sit" ? <Cue id="hr_intro" big /> : <p className="font-display text-2xl font-semibold text-chalk">Find the pulse at the wrist again.</p>)}
+        {st === "count" && <Timed cue={which === "sit" ? "hr_sit" : "hr_stand_go"} end="stop" secs={15} label={`Count the ${word} pulse`} onDone={() => setSt("enter")} />}
+        {st === "enter" && (
+          <>
+            <Stepper id={which} label={`${which === "sit" ? "Sitting" : "Standing"} count`} hint="Beats counted in 15 seconds" value={v} onChange={setV} min={5} max={60} step={1} start={18} />
+            <p className="text-dim" aria-live="polite">
+              {okCount(v) ? `That is ${Number(v) * 4} beats per minute.` : v ? "Enter a count from 5 to 60." : ""}
+            </p>
+          </>
+        )}
+      </section>
+      {st === "ready" && (
+        <Bottom>
+          <button type="button" onClick={() => setSt("count")} className={primary}>
+            Start the 15-second count
+          </button>
+        </Bottom>
+      )}
+      {st === "enter" && (
+        <Bottom>
+          <button type="button" disabled={!okCount(v)} onClick={() => onRead({ n: Number(v), cam: false })} className={primary}>
+            Save the {word} count
+          </button>
+        </Bottom>
+      )}
     </>
   );
 }
 
-function Heart({ onDone }: { onDone: (p: Part) => void }) {
-  type Step = "ready" | "sit" | "sitN" | "up" | "wait" | "stand" | "standN";
-  const [step, setStep] = useState<Step>("ready");
-  const [sit, setSit] = useState("");
-  const [stand, setStand] = useState("");
-  useCues("hr_intro");
+function Reading({ which, onRead }: { which: "sit" | "stand"; onRead: (r: Read) => void }) {
+  const [hand, setHand] = useState(false);
+  return hand ? <HandReading which={which} onRead={onRead} /> : <CamReading which={which} onRead={onRead} onHand={() => setHand(true)} />;
+}
+
+const bpm = (r: Read) => Math.round(r.n * 4);
+
+function Heart({ onDone, next }: Step) {
+  const [step, setStep] = useState<"prep" | "sit" | "up" | "wait" | "stand" | "verdict">("prep");
+  const [sit, setSit] = useState<Read | null>(null);
+  const [stand, setStand] = useState<Read | null>(null);
+  const rise = sit && stand ? bpm(stand) - bpm(sit) : 0;
+  const high = rise > LIMITS.hr;
+  const how = sit && stand ? (sit.cam && stand.cam ? "Camera" : sit.cam || stand.cam ? "Camera and hand" : "Hand count") : "";
 
   return (
     <>
       <section className="flex flex-col gap-6">
-        {step === "ready" && <Cue id="hr_intro" big />}
-        {step === "sit" && <Timed key="sit" cue="hr_sit" end="stop" secs={15} label="Count the sitting pulse" onDone={() => setStep("sitN")} />}
-        {step === "sitN" && <Count id="sit" label="Sitting count" value={sit} onChange={setSit} />}
-        {step === "up" && <p className="text-2xl leading-snug font-semibold">Subject stands up. Then tap the button to start the one-minute wait.</p>}
+        {step === "prep" && <Prep items={PREP.hr} onAll={() => setStep("sit")} />}
+        {step === "sit" && (
+          <Reading
+            key="sit"
+            which="sit"
+            onRead={(r) => {
+              setSit(r);
+              setStep("up");
+            }}
+          />
+        )}
+        {step === "up" && sit && (
+          <div className="flex flex-col gap-3">
+            <p className="text-dim">Sitting</p>
+            <p className="font-mono text-6xl font-bold text-chalk tabular-nums">
+              {bpm(sit)}
+              <span className="ml-2 text-xl font-normal text-dim">bpm</span>
+            </p>
+            <p className="font-display text-2xl font-semibold text-chalk">Subject stands up now. Then start the one-minute wait.</p>
+          </div>
+        )}
         {step === "wait" && <Timed key="wait" cue="hr_stand" secs={60} label="Standing still" onDone={() => setStep("stand")} skip />}
-        {step === "stand" && <Timed key="stand" cue="hr_stand_go" end="stop" secs={15} label="Count the standing pulse" onDone={() => setStep("standN")} />}
-        {step === "standN" && <Count id="stand" label="Standing count" value={stand} onChange={setStand} />}
+        {step === "stand" && (
+          <Reading
+            key="stand"
+            which="stand"
+            onRead={(r) => {
+              setStand(r);
+              setStep("verdict");
+            }}
+          />
+        )}
+        {step === "verdict" && sit && stand && (
+          <Verdict
+            tone={high ? "check" : "ok"}
+            title={high ? "Worth a recheck" : "Looks normal"}
+            body={
+              high
+                ? `Heart rate rose ${rise} bpm on standing, more than ${LIMITS.hr}. Sit them down if they feel dizzy; the result card has what to do.`
+                : `Heart rate rose ${rise} bpm on standing. Up to ${LIMITS.hr} is expected.`
+            }
+            nums={[
+              ["Sitting", `${bpm(sit)} bpm`],
+              ["Standing", `${bpm(stand)} bpm`],
+              ["Measured by", how],
+            ]}
+            again={() => {
+              setSit(null);
+              setStand(null);
+              setStep("sit");
+            }}
+            note={NOTE}
+          />
+        )}
       </section>
-      <Bottom>
-        {step === "ready" && (
-          <button type="button" onClick={() => setStep("sit")} className={primary}>
-            Start the 15-second count
-          </button>
-        )}
-        {step === "sitN" && (
-          <button type="button" disabled={!okCount(sit)} onClick={() => setStep("up")} className={primary}>
-            Save sitting count
-          </button>
-        )}
-        {step === "up" && (
+      {step === "up" && (
+        <Bottom>
           <button type="button" onClick={() => setStep("wait")} className={primary}>
             Subject is standing
           </button>
-        )}
-        {step === "standN" && (
-          <button type="button" disabled={!okCount(stand)} onClick={() => onDone({ hr: { sit: Number(sit), stand: Number(stand) } })} className={primary}>
-            Next: balance
-          </button>
-        )}
-      </Bottom>
+        </Bottom>
+      )}
+      {step === "verdict" && sit && stand && <Done next={next} onClick={() => onDone({ hr: { sit: sit.n, stand: stand.n, cam: sit.cam && stand.cam } })} />}
     </>
   );
 }
 
-function Balance({ onDone }: { onDone: (p: Part) => void }) {
+type Bal = { sway: Sway; secs: number; rms?: number };
+
+function CamBalance({ onRead, onHand }: { onRead: (b: Bal) => void; onHand: () => void }) {
+  useCues("bal_cam");
+  return <MotionBal onRead={(r) => onRead({ sway: r.out ? "out" : "none", secs: r.out ? r.secs : 30, rms: r.rms })} onHand={onHand} />;
+}
+
+function HandBalance({ onRead }: { onRead: (b: Bal) => void }) {
   const [step, setStep] = useState<"ready" | "go" | "rate">("ready");
   const [sway, setSway] = useState<Sway | null>(null);
   const [secs, setSecs] = useState(30);
@@ -319,7 +505,12 @@ function Balance({ onDone }: { onDone: (p: Part) => void }) {
   return (
     <>
       <section className="flex flex-col gap-6">
-        {step === "ready" && <Cue id="bal_intro" big />}
+        {step === "ready" && (
+          <>
+            <Cue id="bal_intro" big />
+            <p className="text-dim">Examiner holds the phone and watches.</p>
+          </>
+        )}
         {step === "go" && (
           <Timed key="go" cue="bal_go" end="bal_done" secs={30} label="Eyes closed, hold still" onStart={(t) => (t0.current = t)} onDone={() => setStep("rate")}>
             <button
@@ -331,7 +522,7 @@ function Balance({ onDone }: { onDone: (p: Part) => void }) {
                 setStep("rate");
                 talk("bal_done");
               }}
-              className={`${btn} min-h-16 w-full border border-alert/60 text-lg text-alert hover:bg-alert/10`}
+              className={`${btn} min-h-16 w-full border-2 border-alert text-lg text-alert hover:bg-alert/10`}
             >
               Subject stepped out
             </button>
@@ -356,8 +547,8 @@ function Balance({ onDone }: { onDone: (p: Part) => void }) {
           </>
         )}
       </section>
-      <Bottom>
-        {step === "ready" && (
+      {step === "ready" && (
+        <Bottom>
           <button
             type="button"
             onClick={() => {
@@ -368,87 +559,187 @@ function Balance({ onDone }: { onDone: (p: Part) => void }) {
           >
             Start 30 seconds
           </button>
-        )}
-        {step === "rate" && (
-          <button type="button" disabled={!sway} onClick={() => sway && onDone({ bal: { sway, secs: sway === "out" ? secs : 30 } })} className={primary}>
-            Next: sleep and mood
+        </Bottom>
+      )}
+      {step === "rate" && (
+        <Bottom>
+          <button type="button" disabled={!sway} onClick={() => sway && onRead({ sway, secs: sway === "out" ? secs : 30 })} className={primary}>
+            Save the rating
           </button>
-        )}
-      </Bottom>
+        </Bottom>
+      )}
     </>
   );
 }
 
-function Mood({ onDone }: { onDone: (p: Part) => void }) {
+const SWAY: Record<Sway, string> = { none: "None", mild: "Mild", marked: "Marked", out: "Stepped out" };
+
+function Balance({ onDone, next }: Step) {
+  const [step, setStep] = useState<"prep" | "cam" | "hand" | "verdict">("prep");
+  const [why, setWhy] = useState("");
+  const [b, setB] = useState<Bal | null>(null);
+  const [src, setSrc] = useState<"cam" | "hand">("cam");
+  const read = (s: "cam" | "hand") => (v: Bal) => {
+    setB(v);
+    setSrc(s);
+    setStep("verdict");
+  };
+
+  async function start() {
+    const ok = await askMotion();
+    if (!ok) setWhy("This phone isn't sharing its motion sensor, so rate the sway by eye. On iPhone, allow Motion & Orientation when asked.");
+    setStep(ok ? "cam" : "hand");
+  }
+
+  let tone: Tone = "ok";
+  let title = "Looks normal";
+  let body = "Held steady for the full 30 seconds with eyes closed.";
+  if (b?.sway === "out") {
+    tone = "check";
+    title = "Worth a recheck";
+    body = `Stepped out after ${b.secs} seconds. Sit them down; note any dizziness or spinning.`;
+  } else if (b && (src === "cam" ? (b.rms ?? 0) >= 0.25 : b.sway === "marked")) {
+    tone = "check";
+    title = "Worth a recheck";
+    body = "Stayed up but swayed more than a steady stance. The result card compares this with their usual.";
+  }
+
+  return (
+    <>
+      <section className="flex flex-col gap-6">
+        {step === "prep" && <Prep items={PREP.bal} onAll={start} />}
+        {step === "cam" && <CamBalance onRead={read("cam")} onHand={() => setStep("hand")} />}
+        {step === "hand" && (
+          <>
+            {why && <p className="text-alert">{why}</p>}
+            <HandBalance onRead={read("hand")} />
+          </>
+        )}
+        {step === "verdict" && b && (
+          <Verdict
+            tone={tone}
+            title={title}
+            body={body}
+            nums={
+              src === "cam"
+                ? [
+                    ["Sway", `${(b.rms ?? NaN).toFixed(2)} m/s²`],
+                    ["Held for", `${b.secs} s`],
+                  ]
+                : [
+                    ["Rating", SWAY[b.sway]],
+                    ["Held for", `${b.secs} s`],
+                  ]
+            }
+            again={() => {
+              setB(null);
+              setStep(src);
+            }}
+            note={NOTE}
+          />
+        )}
+      </section>
+      {step === "verdict" && b && <Done next={next} onClick={() => onDone({ bal: b })} />}
+    </>
+  );
+}
+
+function Mood({ onDone, next }: Step) {
+  const [step, setStep] = useState<"ask" | "verdict">("ask");
   const [sleep, setSleep] = useState("");
   const [score, setScore] = useState<"1" | "2" | "3" | "4" | "5" | null>(null);
   const [note, setNote] = useState("");
   useCues("mood_intro", "mood_sleep");
   const h = Number(sleep);
   const ok = sleep !== "" && Number.isFinite(h) && h >= 0 && h <= 24;
+  const low = Number(score) <= LIMITS.mood;
+  const short = h < LIMITS.sleep;
 
   return (
     <>
       <section className="flex flex-col gap-8">
-        <Cue id="mood_intro" />
-        <div className="flex flex-col gap-2">
-          <Cue id="mood_sleep" />
-          <Stepper id="sleep" label="Hours of sleep" value={sleep} onChange={setSleep} min={0} max={24} step={0.5} start={7} />
-          {sleep !== "" && !ok && <p className="text-alert">Enter hours from 0 to 24.</p>}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Cue id="mood_score" />
-          <Choice
-            name="mood"
-            legend="Mood today"
-            cols="grid-cols-5"
-            value={score}
-            onChange={setScore}
-            opts={[
-              ["1", "1", "worst"],
-              ["2", "2"],
-              ["3", "3"],
-              ["4", "4"],
-              ["5", "5", "best"],
+        {step === "ask" && (
+          <>
+            <Cue id="mood_intro" />
+            <div className="flex flex-col gap-2">
+              <Cue id="mood_sleep" />
+              <Stepper id="sleep" label="Hours of sleep" value={sleep} onChange={setSleep} min={0} max={24} step={0.5} start={7} />
+              {sleep !== "" && !ok && <p className="text-alert">Enter hours from 0 to 24.</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Cue id="mood_score" />
+              <Choice
+                name="mood"
+                legend="Mood today"
+                cols="grid-cols-5"
+                value={score}
+                onChange={setScore}
+                opts={[
+                  ["1", "1", "worst"],
+                  ["2", "2"],
+                  ["3", "3"],
+                  ["4", "4"],
+                  ["5", "5", "best"],
+                ]}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Cue id="mood_note" />
+              <label htmlFor="note" className="text-lg font-semibold text-chalk">
+                Their answer <span className="font-normal text-dim">(optional)</span>
+              </label>
+              <textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 200))}
+                rows={3}
+                className="w-full rounded-[3px] border border-edge bg-panel p-4 text-lg focus:border-accent focus:outline-none"
+              />
+            </div>
+          </>
+        )}
+        {step === "verdict" && (
+          <Verdict
+            tone={low || short ? "check" : "ok"}
+            title={low ? "Worth a check-in" : short ? "Short sleep" : "Noted"}
+            body={
+              low
+                ? "Mood is low today. Check in privately after the exam; the result card has what to do."
+                : short
+                  ? `Under ${LIMITS.sleep} hours of sleep. If it happens again next exam, the result card will flag it.`
+                  : "Sleep and mood are recorded."
+            }
+            nums={[
+              ["Sleep", `${h} h`],
+              ["Mood", `${score} of 5`],
+              ...(note.trim() ? [["Said", note.trim()] as [string, string]] : []),
             ]}
+            again={() => setStep("ask")}
+            againLabel="Change the answers"
+            note={NOTE}
           />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Cue id="mood_note" />
-          <label htmlFor="note" className="text-lg font-semibold">
-            Their answer <span className="font-normal text-dim">(optional)</span>
-          </label>
-          <textarea
-            id="note"
-            value={note}
-            onChange={(e) => setNote(e.target.value.slice(0, 200))}
-            rows={3}
-            className="w-full rounded-lg border border-edge bg-panel p-4 text-lg focus:border-accent focus:outline-none"
-          />
-        </div>
+        )}
       </section>
-      <Bottom>
-        <button
-          type="button"
-          disabled={!ok || !score}
-          onClick={() => ok && score && onDone({ mood: { sleep: h, score: Number(score) as 1 | 2 | 3 | 4 | 5, note: note.trim() } })}
-          className={primary}
-        >
-          {ok && score ? "Next: reaction" : "Enter sleep and mood"}
-        </button>
-      </Bottom>
+      {step === "ask" && (
+        <Bottom>
+          <button type="button" disabled={!ok || !score} onClick={() => setStep("verdict")} className={primary}>
+            {ok && score ? "Save the answers" : "Enter sleep and mood"}
+          </button>
+        </Bottom>
+      )}
+      {step === "verdict" && ok && score && <Done next={next} onClick={() => onDone({ mood: { sleep: h, score: Number(score) as 1 | 2 | 3 | 4 | 5, note: note.trim() } })} />}
     </>
   );
 }
 
 const TRIALS = 10;
 
-function React10({ onDone }: { onDone: (p: Part) => void }) {
-  type St = "ready" | "wait" | "go" | "early" | "done";
-  const [st, setSt] = useState<St>("ready");
+function React10({ onDone, next }: Step) {
+  type St = "prep" | "ready" | "wait" | "go" | "early" | "verdict";
+  const [st, setSt] = useState<St>("prep");
   const [ms, setMs] = useState<number[]>([]);
   const t = useRef<{ timer?: ReturnType<typeof setTimeout>; at: number }>({ at: 0 });
-  useCues("rx_intro");
+  const talk = useContext(Talk);
 
   const arm = useCallback(() => {
     clearTimeout(t.current.timer);
@@ -473,25 +764,30 @@ function React10({ onDone }: { onDone: (p: Part) => void }) {
     if (st !== "go") return;
     const all = [...ms, Math.round(performance.now() - t.current.at)];
     setMs(all);
-    if (all.length >= TRIALS) setSt("done");
+    if (all.length >= TRIALS) setSt("verdict");
     else arm();
   }
 
-  const pad =
-    st === "go"
-      ? "bg-accent text-on-accent"
-      : st === "early"
-        ? "bg-panel text-alert border-alert/60"
-        : "bg-panel text-dim";
+  const pad = st === "go" ? "bg-accent text-on-accent glow" : st === "early" ? "bg-panel text-alert border-alert" : "bg-panel text-dim";
+  const sorted = [...ms].sort((a, b) => a - b);
 
   return (
     <>
       <section className="flex flex-1 flex-col gap-4">
+        {st === "prep" && (
+          <Prep
+            items={PREP.rx}
+            onAll={() => {
+              setSt("ready");
+              talk("rx_intro");
+            }}
+          />
+        )}
         {st === "ready" && <Cue id="rx_intro" big />}
         {(st === "wait" || st === "go" || st === "early") && (
           <>
-            <p className="text-dim" aria-live="polite">
-              Tap {Math.min(ms.length + 1, TRIALS)} of {TRIALS}
+            <p className="font-mono text-sm text-dim" aria-live="polite">
+              TAP {String(Math.min(ms.length + 1, TRIALS)).padStart(2, "0")} / {TRIALS}
             </p>
             <button
               type="button"
@@ -505,39 +801,44 @@ function React10({ onDone }: { onDone: (p: Part) => void }) {
                   if (!e.repeat) tap();
                 }
               }}
-              className={`flex min-h-[45vh] w-full touch-manipulation items-center justify-center rounded-2xl border border-edge text-3xl font-bold select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${pad}`}
+              className={`cut flex min-h-[45vh] w-full touch-manipulation items-center justify-center border border-edge font-display text-4xl font-bold uppercase select-none ${pad}`}
             >
               {st === "go" ? "Tap now" : st === "early" ? "Too soon" : "Wait for the flash"}
             </button>
           </>
         )}
-        {st === "done" && (
-          <div className="flex flex-col items-start gap-2">
-            <p className="text-dim">Median of {TRIALS} taps</p>
-            <p className="font-mono text-[4.5rem] leading-none font-bold tabular-nums">
-              {Math.round(median(ms))}
-              <span className="ml-2 text-2xl font-normal text-dim">ms</span>
-            </p>
-          </div>
+        {st === "verdict" && (
+          <Verdict
+            tone="ok"
+            title={`Median ${Math.round(median(ms))} ms`}
+            body="Ten taps recorded."
+            nums={[
+              ["Fastest", `${sorted[0]} ms`],
+              ["Slowest", `${sorted.at(-1)} ms`],
+            ]}
+            again={() => {
+              setMs([]);
+              setSt("ready");
+            }}
+            note={NOTE}
+          />
         )}
       </section>
-      <Bottom>
-        {st === "ready" && (
+      {st === "ready" && (
+        <Bottom>
           <button type="button" onClick={arm} className={primary}>
             Start: 10 taps
           </button>
-        )}
-        {st === "early" && (
+        </Bottom>
+      )}
+      {st === "early" && (
+        <Bottom>
           <button type="button" onClick={arm} className={primary}>
             Try that tap again
           </button>
-        )}
-        {st === "done" && (
-          <button type="button" onClick={() => onDone({ rx: { ms } })} className={primary}>
-            Finish and save
-          </button>
-        )}
-      </Bottom>
+        </Bottom>
+      )}
+      {st === "verdict" && <Done next={next} onClick={() => onDone({ rx: { ms } })} />}
     </>
   );
 }

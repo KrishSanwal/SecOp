@@ -118,3 +118,26 @@ describe("camera and sensor flags", () => {
     expect(Number.isNaN(report(e, [ex({}, 1), ex({}, 2), e]).m.plat)).toBe(true);
   });
 });
+
+describe("in transit", () => {
+  const away = (day: number, res: Partial<Results> = {}) => ex({ hr: { sit: NaN, stand: NaN }, bal: { sway: "none", secs: 0 }, ...res }, day);
+
+  it("skipped heart rate and balance raise nothing", () => {
+    const e = away(3);
+    const r = report(e, [away(1), away(2), e]);
+    expect(r.flags).toEqual([]);
+    expect(Number.isNaN(r.m.hr)).toBe(true);
+    expect(Number.isNaN(r.m.brms)).toBe(true);
+    expect(r.base?.rx).toBe(300);
+  });
+  it("other stations still flag", () => {
+    const e = away(3, { mood: { sleep: 7, score: 2, note: "" } });
+    expect(ids(report(e, [away(1), away(2), e]).flags)).toEqual(["mood_low"]);
+  });
+  it("a transit exam in the baseline leaves the heart-rate baseline to surface exams", () => {
+    const e = ex({ hr: { sit: 17, stand: 27 } }, 3);
+    const r = report(e, [ex({}, 1), away(2), e]);
+    expect(r.base?.hr).toBe(12);
+    expect(ids(r.flags)).toEqual(["hr_high"]);
+  });
+});
