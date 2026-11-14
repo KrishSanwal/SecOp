@@ -14,6 +14,10 @@ const SWAY: Record<Sway, string> = { none: "No sway", mild: "Mild sway", marked:
 const SWAYS: Sway[] = ["none", "mild", "marked", "out"];
 
 const sign = (v: number, d = 0) => `${v > 0 ? "+" : v < 0 ? "−" : "±"}${Math.abs(v).toFixed(d)}`;
+const pace = (f: number) => {
+  const p = Math.round(Math.abs(f) * 100);
+  return p === 0 ? "same speed" : `${p}% ${f > 0 ? "slower" : "faster"}`;
+};
 
 type Data = { r: Report; s?: Crew; x?: Crew; k: number };
 
@@ -122,10 +126,19 @@ export default function Result() {
             flag={hit("rx")}
             today={`${Math.round(r.m.rx)} ms median`}
             usual={r.base && `${Math.round(r.base.rx)} ms`}
-            change={r.base && `${sign(Math.round((r.m.rx / r.base.rx - 1) * 100))}% time`}
+            change={r.base && pace(r.m.rx / r.base.rx - 1)}
           />
         </ul>
       </section>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/" className={ghost}>
+          Back to crew
+        </Link>
+        <button type="button" onClick={() => exportJson()} className={ghost}>
+          Export data
+        </button>
+      </div>
 
       <p className="text-sm text-dim">Prototype. Not a medical device. Records stay on this device.</p>
 
@@ -133,14 +146,6 @@ export default function Result() {
         <Link href={{ pathname: "/exam", query: { subj: r.exam.exr, exr: r.exam.subj } }} className={primary}>
           Swap roles: {sn} examines {xn}
         </Link>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/" className={ghost}>
-            Back to crew
-          </Link>
-          <button type="button" onClick={() => exportJson()} className={ghost}>
-            Export data
-          </button>
-        </div>
       </Bottom>
     </>
   );
