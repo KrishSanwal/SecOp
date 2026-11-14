@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "audio": "node scripts/audio.mjs"
   },
   "dependencies": {
     "idb": "^8.0.4",
