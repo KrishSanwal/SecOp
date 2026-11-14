@@ -2,6 +2,7 @@ import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 // MediaPipe iris landmarks: centre then 4 edge points.
 const IRIS = { r: [468, 469, 470, 471, 472], l: [473, 474, 475, 476, 477] } as const;
+const LID = { r: [159, 145], l: [386, 374] } as const; // upper, lower
 export type Eye = keyof typeof IRIS;
 
 let lm: Promise<FaceLandmarker> | null = null;
@@ -21,6 +22,11 @@ export interface Frame {
   t: number;
   ratio: number; // pupil radius / iris radius, NaN if not found
   irisPx: number;
+  face: boolean;
+  open: number; // lid gap / iris diameter
+  lum: number; // mean brightness inside the iris, 0-255
+  cx: number;
+  cy: number;
 }
 
 const SIDE = 96;
@@ -29,13 +35,16 @@ const SIDE = 96;
 export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: Eye, work: HTMLCanvasElement, dbg?: HTMLCanvasElement): Frame {
   const res = f.detectForVideo(v, t);
   const pts = res.faceLandmarks?.[0];
-  if (!pts) return { t, ratio: NaN, irisPx: 0 };
+  const none = { t, ratio: NaN, irisPx: 0, face: false, open: 0, lum: 0, cx: 0, cy: 0 };
+  if (!pts) return none;
 
   const [c, ...edge] = IRIS[eye].map((i) => pts[i]);
   const W = v.videoWidth, H = v.videoHeight;
   const cx = c.x * W, cy = c.y * H;
   const r = edge.reduce((a, p) => a + Math.hypot(p.x * W - cx, p.y * H - cy), 0) / edge.length;
-  if (r < 6) return { t, ratio: NaN, irisPx: r };
+  const [up, lo] = LID[eye].map((i) => pts[i]);
+  const open = Math.hypot((up.x - lo.x) * W, (up.y - lo.y) * H) / (2 * r || 1);
+  if (r < 6) return { ...none, face: true, irisPx: r, open, cx, cy };
 
   const ctx = work.getContext("2d", { willReadFrequently: true })!;
   work.width = work.height = SIDE;
@@ -71,7 +80,8 @@ export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: 
   }
   // Dark area as a share of the inner disk -> radius ratio vs the full iris.
   const frac = dark / lum.length;
-  return { t, ratio: Math.sqrt(frac) * 0.85, irisPx: r };
+  const mean = lum.reduce((a, b) => a + b, 0) / (lum.length || 1);
+  return { t, ratio: Math.sqrt(frac) * 0.85, irisPx: r, face: true, open, lum: mean, cx, cy };
 }
 
 function otsu(xs: number[]): number {
@@ -92,6 +102,28 @@ function otsu(xs: number[]): number {
     if (v > best) { best = v; th = i; }
   }
   return th;
+}
+
+export interface Check {
+  id: string;
+  ok: boolean;
+  fix: string;
+}
+
+/** Live readiness from the last ~0.5 s of frames. */
+export function ready(fs: Frame[]): Check[] {
+  const f = fs.at(-1);
+  const recent = fs.slice(-15);
+  const move = recent.length > 5 ? Math.max(...recent.map((x) => Math.hypot(x.cx - recent[0].cx, x.cy - recent[0].cy))) / (f?.irisPx || 1) : 9;
+  if (!f?.face) return [{ id: "face", ok: false, fix: "Point the front camera at your face" }];
+  return [
+    { id: "face", ok: true, fix: "" },
+    { id: "near", ok: !!f && f.irisPx >= 22, fix: "Move the phone closer to your eye" },
+    { id: "far", ok: !!f && f.irisPx <= 140, fix: "Move the phone a little further away" },
+    { id: "open", ok: !!f && f.open > 0.55, fix: "Open your eye wide" },
+    { id: "light", ok: !!f && f.lum > 35, fix: "Turn the room lights on" },
+    { id: "still", ok: move < 0.35, fix: "Hold the phone still" },
+  ];
 }
 
 export interface Reflex {

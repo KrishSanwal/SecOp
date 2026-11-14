@@ -83,3 +83,27 @@ export function analyse(tr: { t: number; v: number; on: boolean }[]): PpgResult 
   const bpm = iv.length >= 4 ? 60000 / iv[Math.floor(iv.length / 2)] : NaN;
   return { bpm, beats: peaks.length, q, trace: xs.map((x, i) => ({ t: x.t, v: sig[i] })) };
 }
+
+/** Torch off first (some Android builds keep it lit otherwise), then release the camera. */
+export async function closeRear(s: MediaStream | null) {
+  if (!s) return;
+  for (const t of s.getVideoTracks()) {
+    try {
+      await t.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] });
+    } catch {}
+  }
+  s.getTracks().forEach((t) => t.stop());
+}
+
+/** Is a lit fingertip covering the lens right now? */
+export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): boolean {
+  if (v.readyState < 2) return false;
+  c.width = c.height = 20;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  const w = v.videoWidth, h = v.videoHeight, s = Math.min(w, h) / 2;
+  ctx.drawImage(v, w / 2 - s / 2, h / 2 - s / 2, s, s, 0, 0, 20, 20);
+  const d = ctx.getImageData(0, 0, 20, 20).data;
+  let r = 0, g = 0;
+  for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; }
+  return r / 400 > 100 && g < r * 0.6;
+}

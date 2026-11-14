@@ -1,56 +1,150 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { measureHr, openRear, type PpgResult } from "@/lib/ppg";
+import { useEffect, useRef, useState } from "react";
+import { beep, Page, Prep, Status, Verdict, wait, type Tone } from "@/components/lab";
+import { closeRear, finger, measureHr, openRear, type PpgResult } from "@/lib/ppg";
+
+type Ph = "prep" | "align" | "run" | "done";
+const SECS = 20;
+
+const PREP = [
+  "Sit down and rest for a minute",
+  "Rest your arm on a table, hand relaxed",
+  "Warm hands work best: rub them if they are cold",
+  "Find the back camera and the flash next to it",
+];
 
 export default function HrLab() {
   const vid = useRef<HTMLVideoElement>(null);
-  const [st, setSt] = useState<"off" | "on" | "run">("off");
-  const [torch, setTorch] = useState<boolean | null>(null);
-  const [live, setLive] = useState<{ t: number; on: boolean; bpm: number } | null>(null);
+  const cv = useRef<HTMLCanvasElement>(null);
+  const S = useRef({ s: null as MediaStream | null, on: 0, timer: 0 as ReturnType<typeof setInterval> | 0, busy: false });
+  const [ph, setPh] = useState<Ph>("prep");
+  const [torch, setTorch] = useState(true);
+  const [on, setOn] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+  const [left, setLeft] = useState(SECS);
   const [out, setOut] = useState<PpgResult | null>(null);
   const [err, setErr] = useState("");
 
-  async function cam() {
+  useEffect(() => {
+    const s = S.current;
+    return () => {
+      if (s.timer) clearInterval(s.timer);
+      closeRear(s.s);
+    };
+  }, []);
+
+  async function open() {
+    setErr("");
     try {
       const { s, torch } = await openRear();
+      S.current.s = s;
+      setTorch(torch);
+      setPh("align");
+      await wait(0);
       vid.current!.srcObject = s;
       await vid.current!.play();
-      setTorch(torch);
-      setSt("on");
+      watch();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "camera failed");
+      await closeRear(S.current.s);
+      S.current.s = null;
+      setErr(e instanceof Error && e.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings and try again." : "Could not open the back camera.");
+      setPh("prep");
     }
   }
 
-  async function run() {
-    setOut(null);
-    setSt("run");
-    const r = measureHr(vid.current!, 20, setLive);
-    setOut(await r.done);
-    setSt("on");
+  function watch() {
+    const s = S.current;
+    s.on = 0;
+    s.timer = setInterval(() => {
+      const f = finger(vid.current!, cv.current!);
+      setOn(f);
+      s.on = f ? s.on + 1 : 0;
+      if (s.on >= 6 && !s.busy) run();
+    }, 150);
   }
 
+  async function run() {
+    const s = S.current;
+    s.busy = true;
+    for (const n of [3, 2, 1]) {
+      setCount(n);
+      await wait(600);
+      if (!finger(vid.current!, cv.current!)) {
+        setCount(null);
+        s.busy = false;
+        return;
+      }
+    }
+    setCount(null);
+    if (s.timer) clearInterval(s.timer);
+    beep(660, 100);
+    setPh("run");
+    const r = measureHr(vid.current!, SECS, (p) => {
+      setLeft(Math.max(0, Math.ceil(SECS - p.t / 1000)));
+      setOn(p.on);
+    });
+    const res = await r.done;
+    beep(990, 140);
+    await closeRear(s.s);
+    s.s = null;
+    setOut(res);
+    setPh("done");
+    s.busy = false;
+  }
+
+  async function again() {
+    setOut(null);
+    setLeft(SECS);
+    await open();
+  }
+
+  const v = out ? verdict(out) : null;
+
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-4 p-4">
-      <h1 className="text-xl font-semibold">Heart rate lab</h1>
-      <p className="text-sm text-dim">Cover the back camera and flash completely with your fingertip. Press lightly, keep still. Compare with a manual pulse count or a watch.</p>
+    <Page title="Heart rate" intro="Your fingertip over the camera lets the phone see each heartbeat as a tiny change in colour.">
       {err && <p className="text-alert">{err}</p>}
-      <video ref={vid} playsInline muted className="h-32 w-32 rounded-lg bg-black object-cover" />
-      {torch === false && <p className="text-alert text-sm">Flashlight not available in this browser. Works in bright light only; best on Android Chrome.</p>}
-      {st === "off" ? (
-        <button onClick={cam} className="min-h-12 rounded-lg bg-accent font-semibold text-cabin">Start camera</button>
-      ) : (
-        <button onClick={run} disabled={st === "run"} className="min-h-12 rounded-lg bg-accent font-semibold text-cabin disabled:opacity-50">{st === "run" ? "Measuring 20 s…" : "Measure 20 s"}</button>
+      {ph === "prep" && <Prep items={PREP} onAll={open} />}
+
+      {(ph === "align" || ph === "run") && (
+        <>
+          {!torch && <p className="text-alert">This browser can&apos;t turn on the flash. Use a bright room, or try Chrome on Android.</p>}
+          {ph === "align" && (
+            <>
+              <p>Cover the back camera <b>and</b> the flash with the pad of your index finger. Press lightly; pressing hard stops the blood flow.</p>
+              <Status checks={[{ ok: on, fix: "Cover the camera fully with your fingertip" }]} count={count} />
+            </>
+          )}
+          {ph === "run" && (
+            <div className="rounded-lg border border-accent p-4" role="status">
+              <p className="text-sm text-accent">Measuring</p>
+              <p className="text-4xl font-semibold tabular-nums">{left}s</p>
+              <p className={on ? "text-dim" : "text-alert"}>{on ? "Keep still, don't press harder" : "Finger moved: cover the camera again"}</p>
+            </div>
+          )}
+        </>
       )}
-      {live && st === "run" && (
-        <p className="font-mono">{Math.round(live.t / 1000)} s · finger {live.on ? "on ✓" : "OFF"} · {Number.isFinite(live.bpm) ? Math.round(live.bpm) + " bpm" : "…"}</p>
-      )}
-      {out && (
-        <p className="font-mono text-lg">
-          {Number.isFinite(out.bpm) ? `${Math.round(out.bpm)} bpm` : "no clean signal"} · finger on {Math.round(out.q * 100)}% · {out.beats} beats
-        </p>
-      )}
-    </main>
+      <video ref={vid} playsInline muted className="hidden" />
+      <canvas ref={cv} className="hidden" />
+
+      {v && <Verdict tone={v.tone} title={v.title} body={v.body} nums={v.nums} again={again} />}
+    </Page>
   );
+}
+
+function verdict(r: PpgResult): { tone: Tone; title: string; body: string; nums?: [string, string][] } {
+  const nums: [string, string][] = [
+    ["Heart rate", Number.isFinite(r.bpm) ? `${Math.round(r.bpm)} bpm` : "–"],
+    ["Finger on camera", `${Math.round(r.q * 100)}% of the time`],
+  ];
+  if (!Number.isFinite(r.bpm) || r.q < 0.6) {
+    return { tone: "fail", title: "Couldn't measure", body: r.q < 0.6 ? "Your finger wasn't covering the camera for most of the test. Rest your hand on a table and try again." : "The signal was too noisy. Press more lightly, keep completely still, and try again.", nums };
+  }
+  if (r.bpm >= 50 && r.bpm <= 100) return { tone: "ok", title: "Looks normal", body: "A normal resting heart rate is 50 to 100 beats a minute.", nums };
+  return {
+    tone: "check",
+    title: "Worth a recheck",
+    body: r.bpm > 100 ? "That's faster than a normal resting rate. Sit quietly for two minutes and test again." : "That's slower than a typical resting rate. Fit people can be this low; test again to confirm.",
+    nums,
+  };
 }

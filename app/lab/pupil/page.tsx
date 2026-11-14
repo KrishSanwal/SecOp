@@ -1,119 +1,168 @@
 "use client";
 
-// Throwaway spike: can a phone camera time the pupil light reflex? Not linked from the app.
 import { useEffect, useRef, useState } from "react";
-import { landmarker, measure, reflex, type Eye, type Frame, type Reflex } from "@/lib/pupil";
+import { beep, Page, Prep, Status, Verdict, wait, type Tone } from "@/components/lab";
+import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame, type Reflex } from "@/lib/pupil";
 
-type Phase = "off" | "live" | "dark" | "flash" | "done";
+type Ph = "prep" | "align" | "dark" | "flash" | "done";
+
+const PREP = [
+  "Screen brightness to maximum",
+  "Room lights on, no bright window behind you",
+  "Glasses off",
+  "Hold the phone at eye level, 10 to 15 cm from your face",
+  "Look straight into the front camera, not at the screen",
+];
 
 export default function PupilLab() {
   const vid = useRef<HTMLVideoElement>(null);
   const work = useRef<HTMLCanvasElement>(null);
   const dbg = useRef<HTMLCanvasElement>(null);
-  const [ph, setPh] = useState<Phase>("off");
+  const [ph, setPh] = useState<Ph>("prep");
   const [eye, setEye] = useState<Eye>("r");
-  const [live, setLive] = useState<Frame | null>(null);
-  const [out, setOut] = useState<{ r: Reflex; fs: Frame[]; flash: number } | null>(null);
+  const [checks, setChecks] = useState<Check[]>([]);
+  const [count, setCount] = useState<number | null>(null);
+  const [out, setOut] = useState<Reflex | null>(null);
+  const [debug, setDebug] = useState(false);
   const [err, setErr] = useState("");
-  const rec = useRef<Frame[] | null>(null);
-  const eyeRef = useRef<Eye>("r");
-  useEffect(() => {
-    eyeRef.current = eye;
-  }, [eye]);
 
-  async function start() {
+  const st = useRef({ ph: "prep" as Ph, eye: "r" as Eye, fs: [] as Frame[], rec: null as Frame[] | null, okRun: 0, busy: false, debug: false, raf: 0, s: null as MediaStream | null });
+  useEffect(() => {
+    st.current.ph = ph;
+    st.current.eye = eye;
+    st.current.debug = debug;
+  }, [ph, eye, debug]);
+
+  useEffect(() => {
+    const S = st.current;
+    return () => {
+      cancelAnimationFrame(S.raf);
+      S.s?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  async function open() {
+    setErr("");
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      st.current.s = s;
+      setPh("align");
+      await wait(0);
       vid.current!.srcObject = s;
       await vid.current!.play();
       const f = await landmarker();
-      setPh("live");
       const loop = () => {
         const v = vid.current;
-        if (!v || v.readyState < 2) return requestAnimationFrame(loop);
-        const fr = measure(f, v, performance.now(), eyeRef.current, work.current!, dbg.current!);
-        rec.current?.push(fr);
-        setLive(fr);
-        requestAnimationFrame(loop);
+        const S = st.current;
+        if (v && v.readyState >= 2) {
+          const fr = measure(f, v, performance.now(), S.eye, work.current!, S.debug ? dbg.current! : undefined);
+          S.fs = [...S.fs.slice(-30), fr];
+          S.rec?.push(fr);
+          if (S.ph === "align") {
+            const cs = ready(S.fs);
+            setChecks(cs);
+            S.okRun = cs.every((c) => c.ok) ? S.okRun + 1 : 0;
+            if (S.okRun > 25 && !S.busy) run();
+          }
+        }
+        S.raf = requestAnimationFrame(loop);
       };
-      requestAnimationFrame(loop);
+      st.current.raf = requestAnimationFrame(loop);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "camera failed");
+      st.current.s?.getTracks().forEach((t) => t.stop());
+      st.current.s = null;
+      setErr(e instanceof Error && e.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings and try again." : "Could not open the camera.");
+      setPh("prep");
     }
   }
 
   async function run() {
-    setOut(null);
-    rec.current = [];
+    const S = st.current;
+    S.busy = true;
+    for (const n of [3, 2, 1]) {
+      setCount(n);
+      beep(660, 80);
+      await wait(700);
+      if (!ready(S.fs).every((c) => c.ok)) {
+        setCount(null);
+        S.okRun = 0;
+        S.busy = false;
+        return;
+      }
+    }
+    setCount(null);
+    S.rec = [];
     setPh("dark");
-    await new Promise((r) => setTimeout(r, 1500));
+    await wait(1500);
     const flash = performance.now();
     setPh("flash");
-    await new Promise((r) => setTimeout(r, 2500));
-    const fs = rec.current;
-    rec.current = null;
-    setOut({ r: reflex(fs, flash), fs, flash });
+    await wait(2500);
+    const r = reflex(S.rec, flash);
+    S.rec = null;
+    setOut(r);
     setPh("done");
+    beep(990, 120);
+    S.busy = false;
   }
 
-  useEffect(() => () => {
-    (vid.current?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
-  }, []);
+  function again() {
+    setOut(null);
+    st.current.okRun = 0;
+    setPh("align");
+  }
 
+  const v = out ? verdict(out) : null;
   const cover = ph === "dark" ? "bg-black" : ph === "flash" ? "bg-white" : "";
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-4 p-4">
-      <h1 className="text-xl font-semibold">Pupil lab (spike)</h1>
-      <p className="text-sm text-dim">Hold the phone 10 to 15 cm from your face, front camera at eye level, room lights normal. Keep the eye wide open and look at the camera.</p>
+    <Page title="Pupil light test" intro="The screen flashes and the camera times how fast your pupil shrinks. One eye at a time.">
       {err && <p className="text-alert">{err}</p>}
-      <div className="flex gap-3">
-        <video ref={vid} playsInline muted className="h-40 w-40 rounded-lg bg-black object-cover" />
-        <div className="flex flex-col gap-1">
-          <canvas ref={dbg} className="h-40 w-40 rounded-lg bg-black [image-rendering:pixelated]" />
-          <canvas ref={work} className="hidden" />
-        </div>
-      </div>
-      <p className="font-mono text-sm">
-        iris {live ? Math.round(live.irisPx) : "–"} px · pupil/iris {live && Number.isFinite(live.ratio) ? live.ratio.toFixed(3) : "not found"}
-      </p>
-      <p className="text-xs text-dim">Red = pixels counted as pupil. Want a clean red disc in the middle. Iris should be 25+ px; move closer if not.</p>
-      <div className="flex gap-2">
-        {(["r", "l"] as Eye[]).map((e) => (
-          <button key={e} onClick={() => setEye(e)} aria-pressed={eye === e} className="min-h-11 flex-1 rounded-lg border border-edge aria-pressed:border-accent aria-pressed:text-accent">
-            {e === "r" ? "Right eye" : "Left eye"}
-          </button>
-        ))}
-      </div>
-      {ph === "off" ? (
-        <button onClick={start} className="min-h-12 rounded-lg bg-accent font-semibold text-cabin">Start camera</button>
-      ) : (
-        <button onClick={run} disabled={ph === "dark" || ph === "flash"} className="min-h-12 rounded-lg bg-accent font-semibold text-cabin disabled:opacity-50">Run light test (4 s)</button>
+
+      {ph === "prep" && <Prep items={PREP} onAll={open} />}
+
+      {ph !== "prep" && (
+        <>
+          <div className="flex gap-2" role="group" aria-label="Which eye">
+            {(["r", "l"] as Eye[]).map((e) => (
+              <button key={e} type="button" aria-pressed={eye === e} onClick={() => setEye(e)} disabled={ph !== "align" && ph !== "done"} className="min-h-11 flex-1 rounded-lg border border-edge aria-pressed:border-accent aria-pressed:text-accent">
+                {e === "r" ? "Right eye" : "Left eye"}
+              </button>
+            ))}
+          </div>
+          <video ref={vid} playsInline muted className={`aspect-[4/3] w-full -scale-x-100 rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
+          {ph === "align" && <Status checks={checks} count={count} />}
+          {ph === "align" && <p className="text-sm text-dim">The test starts on its own once everything is ready. Keep looking at the camera when the screen goes dark, then bright.</p>}
+        </>
       )}
-      {out && <Result {...out} />}
+
+      {v && <Verdict tone={v.tone} title={v.title} body={v.body} nums={v.nums} again={again} />}
+
+      {ph !== "prep" && (
+        <details onToggle={(e) => setDebug((e.target as HTMLDetailsElement).open)} className="text-sm text-dim">
+          <summary className="cursor-pointer">Technical view</summary>
+          <p className="mt-2">Highlighted pixels are what the app counts as pupil.</p>
+          <canvas ref={dbg} className="mt-2 size-40 rounded bg-black [image-rendering:pixelated]" />
+        </details>
+      )}
+      <canvas ref={work} className="hidden" />
       {cover && <div className={`fixed inset-0 z-50 ${cover}`} />}
-    </main>
+    </Page>
   );
 }
 
-function Result({ r, fs, flash }: { r: Reflex; fs: Frame[]; flash: number }) {
-  const pts = fs.filter((f) => Number.isFinite(f.ratio));
-  const t0 = flash - 1500;
-  const ys = pts.map((p) => p.ratio);
-  const lo = Math.min(...ys), hi = Math.max(...ys);
-  const path = pts.map((p, i) => `${i ? "L" : "M"}${((p.t - t0) / 4000) * 300},${100 - ((p.ratio - lo) / (hi - lo || 1)) * 90}`).join(" ");
-  const fx = (1500 / 4000) * 300;
-  return (
-    <div className="flex flex-col gap-2 rounded-lg border border-edge p-3">
-      <p className={r.ok ? "text-accent" : "text-alert"}>{r.ok ? "Enough clean frames" : `Not enough clean frames (${pts.length} of ${fs.length})`}</p>
-      <p className="font-mono text-sm">
-        before {r.base.toFixed(3)} · smallest {r.min.toFixed(3)} · shrank {(r.con * 100).toFixed(0)}% · latency {Number.isFinite(r.lat) ? Math.round(r.lat) + " ms" : "–"}
-      </p>
-      <svg viewBox="0 0 300 100" className="h-28 w-full bg-panel">
-        <line x1={fx} x2={fx} y1="0" y2="100" stroke="white" strokeDasharray="3 3" />
-        <path d={path} fill="none" stroke="currentColor" className="text-accent" strokeWidth="1.5" />
-      </svg>
-      <p className="text-xs text-dim">Dashed line = light on. A real reflex: flat, then a drop starting 200 to 400 ms after the line, then a plateau. Normal shrink is roughly 20 to 40%.</p>
-    </div>
-  );
+function verdict(r: Reflex): { tone: Tone; title: string; body: string; nums?: [string, string][] } {
+  const nums: [string, string][] = [
+    ["Reaction time", Number.isFinite(r.lat) ? `${Math.round(r.lat)} ms` : "–"],
+    ["Pupil shrank by", Number.isFinite(r.con) ? `${Math.round(r.con * 100)}%` : "–"],
+  ];
+  if (!r.ok || !Number.isFinite(r.con)) {
+    return { tone: "fail", title: "Couldn't measure", body: "The camera lost your eye during the test. Hold the phone steadier, keep your eye open, and try again.", nums };
+  }
+  if (r.con < 0.05) {
+    return { tone: "fail", title: "No clear reaction seen", body: "Usually this means the camera could not separate the pupil from the iris, which is common with dark eyes. Try brighter room light. If it repeats, use the examiner check instead.", nums };
+  }
+  if (r.con >= 0.12 && r.lat >= 120 && r.lat <= 500) {
+    return { tone: "ok", title: "Looks normal", body: "Your pupil reacted to light at a normal speed and by a normal amount.", nums };
+  }
+  return { tone: "check", title: "Worth a recheck", body: r.lat > 500 ? "Your pupil reacted more slowly than usual for a healthy eye. Test again; if it repeats, compare with the other eye." : "Your pupil shrank less than usual. Test again in brighter light; if it repeats, compare with the other eye.", nums };
 }
