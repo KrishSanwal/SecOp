@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { closeRear, finger, measureHr, openRear, type PpgRun } from "@/lib/ppg";
+import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame } from "@/lib/pupil";
 import { measureSway, type SwayResult } from "@/lib/sway";
 import { beep, Status, Verdict, wait } from "./lab";
 import { Big, ghost } from "./ui";
@@ -228,6 +229,149 @@ export function MotionBal({ onRead, onHand }: { onRead: (r: SwayResult) => void;
         </div>
       )}
       {ph === "fail" && <Fail why={why} again={again} other={onHand} otherLabel="Rate the sway by eye" />}
+    </div>
+  );
+}
+
+export type EyeRead = { con: number; lat: number; ok: boolean };
+
+// Back camera held by the examiner, flash as the light (front camera + screen flash if no torch).
+// Measures the right eye then the left; resolves both reflexes.
+export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeRead }) => void; onHand: () => void }) {
+  const vid = useRef<HTMLVideoElement>(null);
+  const work = useRef<HTMLCanvasElement>(null);
+  const read = useRef(onRead);
+  const [go, setGo] = useState(0);
+  const [ph, setPh] = useState<"open" | "align" | "run" | "fail">("open");
+  const [eye, setEye] = useState<Eye>("r");
+  const [front, setFront] = useState(false);
+  const [checks, setChecks] = useState<Check[]>([]);
+  const [count, setCount] = useState<number | null>(null);
+  const [flash, setFlash] = useState<"" | "dark" | "white">("");
+  const [why, setWhy] = useState("");
+  useEffect(() => {
+    read.current = onRead;
+  });
+
+  useEffect(() => {
+    const k = { live: true, s: null as MediaStream | null };
+    const torch = async (on: boolean) => {
+      try {
+        await k.s?.getVideoTracks()[0]?.applyConstraints({ advanced: [{ torch: on } as MediaTrackConstraintSet] });
+      } catch {}
+    };
+    (async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access.");
+        const get = (fm: "user" | "environment") =>
+          navigator.mediaDevices
+            .getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
+            .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+        let s = await get("environment");
+        const caps = (s.getVideoTracks()[0]?.getCapabilities?.() ?? {}) as { torch?: boolean };
+        const useFront = !caps.torch;
+        if (useFront) {
+          s.getTracks().forEach((t) => t.stop());
+          s = await get("user");
+        }
+        if (!k.live) return s.getTracks().forEach((t) => t.stop());
+        k.s = s;
+        setFront(useFront);
+        const v = vid.current!;
+        v.srcObject = s;
+        await v.play().catch(() => {});
+        const f = await landmarker();
+        setPh("align");
+
+        const out = {} as { r: EyeRead; l: EyeRead };
+        for (const e of ["r", "l"] as Eye[]) {
+          setEye(e);
+          let fs: Frame[] = [];
+          const grab = () => {
+            const fr = measure(f, v, performance.now(), e, work.current!);
+            fs = [...fs.slice(-30), fr];
+            return fr;
+          };
+          for (let ok = 0; k.live; ) {
+            await wait(33);
+            grab();
+            const cs = ready(fs);
+            setChecks(cs);
+            ok = cs.every((c) => c.ok) ? ok + 1 : 0;
+            if (ok < 25) continue;
+            let held = true;
+            for (const n of [3, 2, 1]) {
+              setCount(n);
+              beep(660, 80);
+              const t = performance.now();
+              while (performance.now() - t < 700) { await wait(33); grab(); }
+              if (!ready(fs).every((c) => c.ok)) held = false;
+            }
+            setCount(null);
+            if (held) break;
+            ok = 0;
+          }
+          if (!k.live) return;
+          setPh("run");
+          const rec: Frame[] = [];
+          const until = async (ms: number) => { const t = performance.now(); while (performance.now() - t < ms) { await wait(16); rec.push(grab()); } };
+          if (useFront) setFlash("dark");
+          await until(1500);
+          if (useFront) setFlash("white");
+          else await torch(true);
+          const at = performance.now();
+          await until(2500);
+          setFlash("");
+          if (!useFront) await torch(false);
+          beep(990, 120);
+          const rf = reflex(rec, at);
+          out[e] = { con: rf.con, lat: rf.lat, ok: rf.ok && Number.isFinite(rf.con) && rf.con >= 0.05 };
+          setPh("align");
+        }
+        await closeRear(k.s);
+        k.s = null;
+        if (!out.r.ok && !out.l.ok) {
+          setWhy("The camera couldn't separate the pupil from the iris. Common with dark eyes: add light from the front, or a red filter over the lens. Or rate by eye.");
+          setPh("fail");
+          return;
+        }
+        read.current(out);
+      } catch (e) {
+        await closeRear(k.s);
+        k.s = null;
+        if (!k.live) return;
+        const m = e instanceof Error ? e : new Error(String(e));
+        setWhy(m.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings, or rate by eye." : `Could not start the camera: ${m.message || m.name}`);
+        setPh("fail");
+      }
+    })();
+    return () => {
+      k.live = false;
+      closeRear(k.s);
+    };
+  }, [go]);
+
+  const name = eye === "r" ? "right" : "left";
+  return (
+    <div className="flex flex-col gap-4">
+      {ph === "open" && <p className="text-dim">Opening the camera…</p>}
+      {(ph === "align" || ph === "run") && (
+        <p className="text-lg">
+          {front ? "Hold the front camera 10 to 15 cm from the subject's " : "Hold the back camera 15 to 20 cm from the subject's "}
+          <b>{name} eye</b>. Subject looks far away, eye wide open.
+        </p>
+      )}
+      <video ref={vid} playsInline muted autoPlay className={`aspect-[4/3] w-full rounded-xl bg-black object-cover ${front ? "-scale-x-100" : ""} ${ph === "align" || ph === "run" ? "" : "hidden"}`} />
+      {ph === "align" && <Status checks={checks} count={count} />}
+      {ph === "run" && <p role="status" className="text-lg font-semibold">Measuring the {name} eye. Keep still.</p>}
+      {ph === "align" && (
+        <button type="button" onClick={onHand} className={`${ghost} text-dim`}>
+          Rate by eye instead
+        </button>
+      )}
+      {ph === "fail" && <Fail why={why} again={() => { setPh("open"); setGo((g) => g + 1); }} other={onHand} otherLabel="Rate by eye" />}
+      <canvas ref={work} className="hidden" />
+      {flash && <div className={`fixed inset-0 z-50 ${flash === "dark" ? "bg-black" : "bg-white"}`} />}
     </div>
   );
 }

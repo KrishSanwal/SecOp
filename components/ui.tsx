@@ -9,18 +9,13 @@ import { say } from "@/lib/say";
 export const btn =
   "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[3px] px-4 font-semibold transition-colors duration-150 disabled:cursor-not-allowed";
 export const ghost = `${btn} border border-edge text-ink hover:border-accent hover:text-accent active:bg-rule`;
-export const primary = `${btn} cut glow min-h-14 w-full bg-accent text-center font-display text-lg tracking-wide text-on-accent uppercase hover:brightness-105 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:shadow-none`;
+export const primary = `${btn} cut glow min-h-14 w-full bg-accent text-center font-semibold text-lg text-on-accent hover:brightness-105 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:shadow-none`;
 
 export const Talk = createContext<(id: PromptId) => Promise<boolean>>(say);
 
 export function Tag({ children, tone = "dim" }: { children: ReactNode; tone?: "dim" | "accent" | "alert" }) {
-  const c = { dim: "text-dim", accent: "text-accent", alert: "text-alert" }[tone];
-  return (
-    <p className={`font-mono text-xs tracking-[0.14em] uppercase ${c}`}>
-      <span aria-hidden>{"// "}</span>
-      {children}
-    </p>
-  );
+  const c = { dim: "text-dim", accent: "text-dim", alert: "text-alert" }[tone];
+  return <p className={`text-sm ${c} first-letter:uppercase`}>{children}</p>;
 }
 
 export function Back({ href, onClick, label = "Back" }: { href?: string; onClick?: () => void; label?: string }) {

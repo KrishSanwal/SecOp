@@ -11,7 +11,7 @@ import { LIMITS, median } from "@/lib/scoring";
 import { askMotion } from "@/lib/sway";
 import type { Crew, Pupil, Results, Sway } from "@/lib/types";
 import { Prep, Verdict, type Tone } from "./lab";
-import { CamHr, MotionBal } from "./sense";
+import { CamHr, CamPupil, MotionBal, type EyeRead } from "./sense";
 import { Back, Bottom, btn, Choice, Cue, ghost, primary, Stepper, Tag, Talk, Timed, useCues } from "./ui";
 
 type Key = "pupils" | "hr" | "bal" | "mood" | "rx";
@@ -121,7 +121,6 @@ export default function Exam() {
     return (
       <div className="flex flex-col items-start gap-4">
         <Back href="/" label="Crew" />
-        <Tag tone="alert">can&apos;t start</Tag>
         <h1 className="text-3xl font-bold">Can&apos;t start the exam</h1>
         <p role="alert" className="text-lg text-alert">
           {bad}
@@ -137,8 +136,7 @@ export default function Exam() {
       <>
         <Back href="/" label="Crew" />
         <section className="flex flex-col items-start gap-4">
-          <Tag tone="accent">exam saved</Tag>
-          <h1 className="text-[2.75rem] leading-[1.05] font-bold uppercase">Exam complete</h1>
+          <h1 className="text-[2.75rem] leading-[1.05] font-bold">Exam complete</h1>
           <p className="text-lg text-dim">Saved on this device. Swap roles when you are ready.</p>
         </section>
         <Bottom>
@@ -193,9 +191,9 @@ export default function Exam() {
               ))}
             </ol>
             <Tag tone="accent">
-              station {String(n + 1).padStart(2, "0")} of {String(list.length).padStart(2, "0")}
+              station {n + 1} of {list.length}
             </Tag>
-            <h1 className="flex items-center gap-3 text-[2.5rem] leading-none font-bold uppercase">
+            <h1 className="flex items-center gap-3 text-[2.5rem] leading-none font-bold">
               <st.I size={36} weight="bold" className="shrink-0 text-accent" aria-hidden />
               {st.t}
             </h1>
@@ -219,7 +217,6 @@ function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "spac
   return (
     <>
       <section className="flex flex-col gap-6">
-        <Tag tone="accent">peer exam ✱ about five minutes</Tag>
         <h1 className="text-[2.75rem] leading-[1.15] font-bold text-balance">
           <span className="border-b-4 border-accent">{p.x.name}</span> <span className="font-medium text-dim">examines</span>{" "}
           <span className="border-b-4 border-accent">{p.s.name}</span>
@@ -239,7 +236,7 @@ function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "spac
         <ol className="flex flex-col divide-y divide-rule border-y border-rule">
           {p.list.map((t, i) => (
             <li key={t.k} className="flex items-center gap-4 py-3">
-              <span className="w-7 font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+              <span className="w-7 font-mono text-sm text-accent">{i + 1}</span>
               <t.I size={22} weight="bold" className="shrink-0 text-dim" aria-hidden />
               <span className="font-semibold text-chalk">{t.t}</span>
               <span className="ml-auto text-right text-sm text-dim">{t.h}</span>
@@ -267,16 +264,17 @@ function Done({ next, onClick, disabled }: { next: string; onClick: () => void; 
 }
 
 const PREP = {
-  pupils: ["Dim the room lights if you can", "Subject's glasses off", "Examiner at the subject's eye level", "A penlight or a second phone's torch in hand"],
+  pupils: ["Room lights on, no bright window behind the subject", "Subject's glasses off", "Examiner holds the phone at the subject's eye level", "Subject looks at something far away, eyes wide open"],
   hr: ["Subject sits and rests for a minute", "Arm resting on a table, hand relaxed", "Warm hands: rub them if they are cold", "Find the back camera and the flash next to it"],
   bal: ["Shoes off, on a flat floor", "Clear space; examiner within arm's reach", "Sound on: beeps say when to close and open eyes", "Phone flat on the middle of the chest, both hands", "Feet together, arms in, look straight ahead"],
   rx: ["Subject sits", "Phone flat on a table in front of them", "No distractions; everyone else quiet"],
 };
 
 function Pupils({ onDone, next }: Step) {
-  const [step, setStep] = useState<"prep" | "left" | "right" | "rate" | "verdict">("prep");
+  const [step, setStep] = useState<"prep" | "cam" | "left" | "right" | "rate" | "verdict">("prep");
   const [l, setL] = useState<Pupil | null>(null);
   const [r, setR] = useState<Pupil | null>(null);
+  const [cam, setCam] = useState<{ r: EyeRead; l: EyeRead } | null>(null);
   const talk = useContext(Talk);
   const opts: [Pupil, string, string][] = [
     ["brisk", "Brisk", "shrinks fast"],
@@ -287,16 +285,32 @@ function Pupils({ onDone, next }: Step) {
     setStep(s);
     if (id) talk(id);
   };
-  const start = async () => {
+  const hand = async () => {
+    setCam(null);
     setStep("left");
     if (await talk("pupil_intro")) talk("pupil_left");
   };
+  const start = () => setStep("cam");
+  // Camera: brisk if it shrank 12%+ within 500 ms; unequal if the eyes differ by 10 points.
+  const rate = (e: EyeRead): Pupil => (e.ok && e.con >= 0.12 && e.lat <= 500 ? "brisk" : "sluggish");
+  const got = (c: { r: EyeRead; l: EyeRead }) => {
+    const asym = c.r.ok && c.l.ok ? Math.abs(c.r.con - c.l.con) : NaN;
+    const uneq = asym > 0.1;
+    setCam(c);
+    setR(uneq && c.r.con < c.l.con ? "unequal" : rate(c.r));
+    setL(uneq && c.l.con <= c.r.con ? "unequal" : rate(c.l));
+    setStep("verdict");
+  };
+  const okEyes = cam ? [cam.r, cam.l].filter((e) => e.ok) : [];
+  const avg = (k: "con" | "lat") => (okEyes.length ? okEyes.reduce((a, e) => a + e[k], 0) / okEyes.length : undefined);
+  const pct = (e?: EyeRead) => (e?.ok ? `${Math.round(e.con * 100)}% in ${Math.round(e.lat)} ms` : "not measured");
   const fine = l === "brisk" && r === "brisk";
 
   return (
     <>
       <section className="flex flex-col gap-6">
         {step === "prep" && <Prep items={PREP.pupils} onAll={start} />}
+        {step === "cam" && <CamPupil onRead={got} onHand={hand} />}
         {step === "left" && (
           <>
             <Cue id="pupil_intro" />
@@ -316,14 +330,22 @@ function Pupils({ onDone, next }: Step) {
             tone={fine ? "ok" : "check"}
             title={fine ? "Looks normal" : "Worth a recheck"}
             body={fine ? "Both pupils shrank briskly in the light." : "One or both pupils were slow or unequal. Recheck in dim light; the result card has what to do."}
-            nums={[
-              ["Left eye", l ?? "–"],
-              ["Right eye", r ?? "–"],
-            ]}
+            nums={
+              cam
+                ? [
+                    ["Right eye", pct(cam.r)],
+                    ["Left eye", pct(cam.l)],
+                  ]
+                : [
+                    ["Left eye", l ?? "–"],
+                    ["Right eye", r ?? "–"],
+                  ]
+            }
             again={() => {
               setL(null);
               setR(null);
-              go("left", "pupil_left");
+              if (cam) setStep("cam");
+              else go("left", "pupil_left");
             }}
             note={NOTE}
           />
@@ -350,7 +372,14 @@ function Pupils({ onDone, next }: Step) {
           </button>
         </Bottom>
       )}
-      {step === "verdict" && l && r && <Done next={next} onClick={() => onDone({ pupils: { l, r } })} />}
+      {step === "verdict" && l && r && (
+        <Done
+          next={next}
+          onClick={() =>
+            onDone({ pupils: cam ? { l, r, lat: avg("lat"), con: avg("con"), asym: cam.r.ok && cam.l.ok ? Math.abs(cam.r.con - cam.l.con) : undefined } : { l, r } })
+          }
+        />
+      )}
     </>
   );
 }
@@ -788,7 +817,7 @@ function React10({ onDone, next }: Step) {
         {(st === "wait" || st === "go" || st === "early") && (
           <>
             <p className="font-mono text-sm text-dim" aria-live="polite">
-              TAP {String(Math.min(ms.length + 1, TRIALS)).padStart(2, "0")} / {TRIALS}
+              TAP {Math.min(ms.length + 1, TRIALS)} / {TRIALS}
             </p>
             <button
               type="button"
@@ -802,7 +831,7 @@ function React10({ onDone, next }: Step) {
                   if (!e.repeat) tap();
                 }
               }}
-              className={`cut flex min-h-[45vh] w-full touch-manipulation items-center justify-center border border-edge font-display text-4xl font-bold uppercase select-none ${pad}`}
+              className={`cut flex min-h-[45vh] w-full touch-manipulation items-center justify-center border border-edge font-display text-4xl font-bold select-none ${pad}`}
             >
               {st === "go" ? "Tap now" : st === "early" ? "Too soon" : "Wait for the flash"}
             </button>

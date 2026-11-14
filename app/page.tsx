@@ -10,7 +10,7 @@ export default function Home() {
           <circle cx="10" cy="10" r="8" />
           <circle cx="18" cy="10" r="8" />
         </svg>
-        <span className="font-display text-base leading-none font-bold tracking-wide whitespace-nowrap text-chalk uppercase">Second Opinion</span>
+        <span className="font-display text-base leading-none font-bold whitespace-nowrap text-chalk">Second Opinion</span>
         <Link href="/lab" className="ml-auto min-h-11 content-center px-2 text-sm whitespace-nowrap text-dim hover:text-accent">
           Sensors
         </Link>

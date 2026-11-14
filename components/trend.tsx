@@ -7,7 +7,7 @@ import { examsOf, getCrew } from "@/lib/db";
 import { insights, META, series, type Point } from "@/lib/insights";
 import { LIMITS } from "@/lib/scoring";
 import type { Crew, Exam } from "@/lib/types";
-import { Back, ghost, Tag } from "./ui";
+import { Back, ghost } from "./ui";
 
 export default function Trend() {
   const id = useSearchParams().get("crew");
@@ -34,8 +34,7 @@ export default function Trend() {
     <>
       <header className="flex flex-col gap-2">
         <Back href="/" label="Crew" />
-        <Tag tone="accent">trends ✱ {name}</Tag>
-        <h1 className="text-[2.5rem] leading-[1.05] font-bold uppercase">{name} over time</h1>
+        <h1 className="text-[2.5rem] leading-[1.05] font-bold">{name} over time</h1>
         <p className="text-dim">
           {d.hist.length} {d.hist.length === 1 ? "exam" : "exams"}. The shaded line is {name}&apos;s usual, from the first {LIMITS.baseN}.
         </p>
@@ -43,12 +42,12 @@ export default function Trend() {
 
       {tips.length > 0 && (
         <section className="flex flex-col gap-2" aria-labelledby="noticed">
-          <h2 id="noticed" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
-            <span aria-hidden>{"// "}</span>what we noticed
+          <h2 id="noticed" className="text-xl font-semibold">
+            What we noticed
           </h2>
           <ul className="flex flex-col gap-2">
             {tips.map((t) => (
-              <li key={t} className="border-l-2 border-accent pl-3 text-lg">{t}</li>
+              <li key={t} className="rounded-lg bg-panel px-3 py-2 text-lg">{t}</li>
             ))}
           </ul>
         </section>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { listCrew, putCrew, uid } from "@/lib/db";
 import type { Crew } from "@/lib/types";
-import { Bottom, btn, ghost, primary, Tag, tile } from "./ui";
+import { Bottom, btn, ghost, primary, tile } from "./ui";
 
 type Slot = "subj" | "exr";
 
@@ -73,13 +73,12 @@ export default function CrewPick() {
   return (
     <>
       <section className="flex flex-col items-start gap-4">
-        <Tag tone="accent">crew check ✱ who examines whom</Tag>
         {ready ? (
           <h1 key={flip} className="text-[2.75rem] leading-[1.15] font-bold text-balance motion-safe:animate-swap">
             <Blank>{x.name}</Blank> <span className="font-medium text-dim">examines</span> <Blank>{s.name}</Blank>
           </h1>
         ) : (
-          <h1 className="text-[2.75rem] leading-[1.05] font-bold uppercase">Set up the exam</h1>
+          <h1 className="text-[2.75rem] leading-[1.05] font-bold">Set up the exam</h1>
         )}
         <p className="max-w-[36ch] text-lg leading-relaxed text-dim">
           {ready

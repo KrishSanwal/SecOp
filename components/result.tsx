@@ -50,7 +50,6 @@ export default function Result() {
     return (
       <div className="flex flex-col items-start gap-4">
         <Back href="/" label="Crew" />
-        <Tag tone="alert">no result</Tag>
         <h1 className="text-3xl font-bold">No result to show</h1>
         <p role="alert" className="text-lg text-alert">
           {bad}
@@ -82,8 +81,8 @@ export default function Result() {
     <>
       <Back href="/" label="Crew" />
       <header className="flex flex-col gap-3">
-        <Tag tone={n ? "alert" : "accent"}>result ✱ {when}</Tag>
-        <h1 className="text-[2.75rem] leading-[1.05] font-bold text-balance uppercase">
+        <Tag tone={n ? "alert" : "accent"}>result · {when}</Tag>
+        <h1 className="text-[2.75rem] leading-[1.05] font-bold text-balance">
           {n ? `${n} ${n === 1 ? "result needs" : "results need"} attention` : "All clear today"}
         </h1>
         <p className="text-lg text-dim">
@@ -93,8 +92,8 @@ export default function Result() {
 
       {n ? (
         <section className="flex flex-col gap-4" aria-labelledby="todo">
-          <h2 id="todo" className="font-mono text-xs font-normal tracking-[0.14em] text-alert uppercase">
-            <span aria-hidden>{"// "}</span>what to do
+          <h2 id="todo" className="text-xl font-semibold">
+            What to do
           </h2>
           <p className="text-dim">{RULE}</p>
           {r.flags.map((f) => (
@@ -107,12 +106,12 @@ export default function Result() {
 
       {tips.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="noticed">
-          <h2 id="noticed" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
-            <span aria-hidden>{"// "}</span>what we noticed
+          <h2 id="noticed" className="text-xl font-semibold">
+            What we noticed
           </h2>
           <ul className="flex flex-col gap-2">
             {tips.map((t) => (
-              <li key={t} className="border-l-2 border-accent pl-3 text-lg">
+              <li key={t} className="rounded-lg bg-panel px-3 py-2 text-lg">
                 {t}
               </li>
             ))}
@@ -121,8 +120,8 @@ export default function Result() {
       )}
 
       <section className="flex flex-col gap-4" aria-labelledby="all">
-        <h2 id="all" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
-          <span aria-hidden>{"// "}</span>all stations
+        <h2 id="all" className="text-xl font-semibold">
+          All stations
         </h2>
         {!b && (
           <p className="text-dim">
@@ -180,7 +179,7 @@ export default function Result() {
         </button>
       </div>
 
-      <p className="font-mono text-xs text-dim">Prototype. Not a medical device. Records stay on this device.</p>
+      <p className="text-sm text-dim">Prototype. Not a medical device. Records stay on this device.</p>
 
       <Bottom>
         <Link href={{ pathname: "/exam", query: { subj: r.exam.exr, exr: r.exam.subj } }} className={primary}>
@@ -200,11 +199,11 @@ function Card({ f }: { f: Flag }) {
         {f.msg}
       </h3>
       <div>
-        <p className="font-mono text-xs tracking-[0.14em] text-dim uppercase">Do now</p>
+        <p className="text-sm font-semibold text-dim">Do now</p>
         <p className="mt-1 text-lg leading-relaxed">{a.now}</p>
       </div>
       <div>
-        <p className="font-mono text-xs tracking-[0.14em] text-dim uppercase">Contact the flight surgeon</p>
+        <p className="text-sm font-semibold text-dim">Contact the flight surgeon</p>
         <p className="mt-1 text-lg leading-relaxed">{a.call}</p>
       </div>
       <p className="text-sm text-dim">Source: {a.src}</p>
@@ -220,7 +219,7 @@ function Row(p: { I: Icon; name: string; flag: boolean; today: string; more?: st
           <p.I size={20} weight="bold" className={p.flag ? "text-alert" : "text-dim"} aria-hidden />
           {p.name}
         </h3>
-        {p.flag && <span className="font-mono text-xs tracking-[0.14em] text-alert uppercase">Needs attention</span>}
+        {p.flag && <span className="text-sm font-semibold text-alert">Needs attention</span>}
       </div>
       <p className="text-xl text-chalk">{p.today}</p>
       {p.more && <p className="text-dim">{p.more}</p>}

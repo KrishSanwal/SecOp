@@ -8,7 +8,7 @@ export function Page({ title, intro, children }: { title: string; intro: string;
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-6 px-4 pt-4 pb-10">
       <Back href="/lab" />
       <div>
-        <h1 className="text-3xl font-bold uppercase">{title}</h1>
+        <h1 className="text-3xl font-bold">{title}</h1>
         <p className="mt-1 text-dim">{intro}</p>
       </div>
       {children}
@@ -52,16 +52,16 @@ export function Status({ checks, count }: { checks: { ok: boolean; fix: string }
     <div className={`rounded-[3px] border bg-panel p-4 ${bad ? "border-edge" : "hud border-accent"}`} role="status" aria-live="polite">
       {bad ? (
         <>
-          <p className="font-mono text-xs tracking-[0.14em] text-dim uppercase">Not ready yet</p>
+          <p className="text-sm text-dim">Not ready yet</p>
           <p className="mt-1 text-lg font-semibold text-chalk">{bad.fix}</p>
         </>
       ) : (
         <>
-          <p className="font-mono text-xs tracking-[0.14em] text-accent uppercase">Ready</p>
+          <p className="text-sm font-semibold text-accent">Ready</p>
           <p className="mt-1 font-display text-2xl font-semibold text-chalk">{count != null ? `Starting in ${count}…` : "Hold still"}</p>
         </>
       )}
-      <p className="mt-2 font-mono text-xs text-dim">
+      <p className="mt-2 text-sm text-dim">
         {checks.filter((c) => c.ok).length} of {checks.length} checks passed
       </p>
     </div>
