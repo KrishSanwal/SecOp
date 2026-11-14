@@ -1,6 +1,6 @@
 import { fail, groq, MODELS } from "@/lib/groq";
 
-const MAX = 400;
+const MAX = 200; // Groq Orpheus input limit
 
 export async function POST(req: Request) {
   try {

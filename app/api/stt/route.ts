@@ -1,6 +1,8 @@
 import { fail, groq, MODELS } from "@/lib/groq";
 
 const MAX = 10 * 1024 * 1024;
+// Groq reads the format from the file name; iPhone Safari records mp4, Chrome webm.
+const EXT: Record<string, string> = { "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/x-wav": "wav", "audio/ogg": "ogg", "audio/flac": "flac" };
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +14,7 @@ export async function POST(req: Request) {
     if (audio.size > MAX) return Response.json({ error: "audio over 10 MB" }, { status: 400 });
 
     const out = new FormData();
-    out.append("file", audio, "clip.webm");
+    out.append("file", audio, `clip.${EXT[audio.type.split(";")[0]] ?? "webm"}`);
     out.append("model", MODELS.stt);
     out.append("language", "en");
     out.append("response_format", "json");
