@@ -9,6 +9,9 @@ Read `PLAN.md` first. It is the design and the task list.
 - Storage is IndexedDB in the browser. No server database, no accounts.
 - No NASA logos, flags or mission identifiers anywhere, including generated images.
 - Any AI-generated image or audio in the demo carries a visible watermark or a text acknowledgement.
+- Code style: almost no comments. Only when the why is not obvious, and one short line max. No
+  doc blocks, no section banners.
+- Names short and crisp: `hr`, `sway`, `base`, `rx`, `ms`, `flags`. Not `orthostaticDeltaBeatsPerMinute`.
 - Commits: plain messages, no AI co-author lines.
 - Validate every external call: check HTTP status, wrap JSON parsing, fail with a clear message.
 - Secrets come from `.env.local`, never committed. `.env.example` lists the names only.
