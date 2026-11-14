@@ -27,6 +27,8 @@ export default function Exam() {
   const on = useRef(true);
   const [saved, setSaved] = useState("");
   const [leave, setLeave] = useState(false);
+  const [space, setSpace] = useState(false);
+  const seq = space ? [0, 3, 4] : [0, 1, 2, 3, 4]; // no gravity: skip standing heart rate and balance
   const ok = sid && xid && sid !== xid;
   const bad = ok ? err : "Pick two different crew members first.";
 
@@ -65,10 +67,11 @@ export default function Exam() {
   async function next(p: Part) {
     const all = { ...res, ...p };
     setRes(all);
-    if (n < STATIONS.length - 1) return setN(n + 1);
+    if (n < seq.length - 1) return setN(n + 1);
     const id = uid();
+    const full = space ? { ...all, hr: { sit: NaN, stand: NaN }, bal: { sway: "none" as Sway, secs: 0 }, space: true } : all;
     try {
-      await putExam({ id, subj: sid, exr: xid, at: Date.now(), res: all as Results });
+      await putExam({ id, subj: sid, exr: xid, at: Date.now(), res: full as Results });
     } catch {
       return setErr("Could not save the exam. Storage may be full or blocked.");
     }
@@ -135,37 +138,37 @@ export default function Exam() {
       </div>
 
       {n < 0 ? (
-        <Intro s={s} x={x} onGo={() => setN(0)} />
+        <Intro s={s} x={x} space={space} setSpace={setSpace} onGo={() => setN(0)} />
       ) : (
         <>
           <header className="flex flex-col gap-3">
-            <ol className="grid grid-cols-5 gap-1.5" aria-label="Stations">
-              {STATIONS.map((t, i) => (
-                <li key={t} aria-current={i === n ? "step" : undefined} className={`h-1.5 rounded-full ${i <= n ? "bg-accent" : "bg-rule"}`}>
+            <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${seq.length}, minmax(0, 1fr))` }} aria-label="Stations">
+              {seq.map((k, i) => (
+                <li key={k} aria-current={i === n ? "step" : undefined} className={`h-1.5 rounded-full ${i <= n ? "bg-accent" : "bg-rule"}`}>
                   <span className="sr-only">
-                    {t}
+                    {STATIONS[k]}
                     {i < n ? ", done" : ""}
                   </span>
                 </li>
               ))}
             </ol>
             <p className="text-dim">
-              Station {n + 1} of 5. {x.name} examines {s.name}.
+              Station {n + 1} of {seq.length}. {x.name} examines {s.name}.
             </p>
-            <h1 className="text-[2.25rem] leading-tight font-bold tracking-tight">{STATIONS[n]}</h1>
+            <h1 className="text-[2.25rem] leading-tight font-bold tracking-tight">{STATIONS[seq[n]]}</h1>
           </header>
-          {n === 0 && <Pupils key="p" onDone={next} />}
-          {n === 1 && <Heart key="h" onDone={next} />}
-          {n === 2 && <Balance key="b" onDone={next} />}
-          {n === 3 && <Mood key="m" onDone={next} />}
-          {n === 4 && <React10 key="r" onDone={next} />}
+          {seq[n] === 0 && <Pupils key="p" onDone={next} />}
+          {seq[n] === 1 && <Heart key="h" onDone={next} />}
+          {seq[n] === 2 && <Balance key="b" onDone={next} />}
+          {seq[n] === 3 && <Mood key="m" onDone={next} />}
+          {seq[n] === 4 && <React10 key="r" onDone={next} />}
         </>
       )}
     </Talk.Provider>
   );
 }
 
-function Intro({ s, x, onGo }: { s: Crew; x: Crew; onGo: () => void }) {
+function Intro({ s, x, space, setSpace, onGo }: { s: Crew; x: Crew; space: boolean; setSpace: (v: boolean) => void; onGo: () => void }) {
   useCues("start");
   return (
     <>
@@ -174,10 +177,25 @@ function Intro({ s, x, onGo }: { s: Crew; x: Crew; onGo: () => void }) {
           {x.name} <span className="font-normal text-dim">examines</span> {s.name}
         </h1>
         <Cue id="start" />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 font-semibold">Where are you?</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              [false, "On a surface", "Moon, Mars, or after landing"],
+              [true, "In space", "No gravity: ISS or in transit"],
+            ].map(([v, t, d]) => (
+              <button key={String(v)} type="button" aria-pressed={space === v} onClick={() => setSpace(v as boolean)} className="min-h-16 rounded-lg border border-edge px-3 py-2 text-left aria-pressed:border-accent aria-pressed:bg-accent/12">
+                <span className="block font-semibold">{t as string}</span>
+                <span className="block text-sm text-dim">{d as string}</span>
+              </button>
+            ))}
+          </div>
+          {space && <p className="text-sm text-dim">Standing heart rate and balance need gravity, so they are skipped.</p>}
+        </fieldset>
         <ol className="flex flex-col divide-y divide-rule border-y border-rule">
-          {STATIONS.map((t, i) => (
+          {STATIONS.map((t, i) => [t, i] as const).filter(([, i]) => !(space && (i === 1 || i === 2))).map(([t, i], pos) => (
             <li key={t} className="flex items-baseline gap-4 py-3">
-              <span className="w-4 text-dim tabular-nums">{i + 1}</span>
+              <span className="w-4 text-dim tabular-nums">{pos + 1}</span>
               <span className="font-semibold">{t}</span>
               <span className="ml-auto text-right text-dim">{HINTS[i]}</span>
             </li>

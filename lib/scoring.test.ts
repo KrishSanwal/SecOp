@@ -118,3 +118,16 @@ describe("camera and sensor flags", () => {
     expect(Number.isNaN(report(e, [ex({}, 1), ex({}, 2), e]).m.plat)).toBe(true);
   });
 });
+
+describe("in space", () => {
+  it("skips gravity stations without polluting the baseline", () => {
+    const sp = (day: number) => ex({ hr: { sit: NaN, stand: NaN }, bal: { sway: "none", secs: 0 }, space: true } as Partial<Results>, day);
+    const g1 = ex({}, 1), g2 = ex({}, 2), s3 = sp(3);
+    const r = report(s3, [g1, g2, s3]);
+    expect(Number.isNaN(r.m.hr)).toBe(true);
+    expect(Number.isNaN(r.m.bal)).toBe(true);
+    expect(r.flags).toEqual([]);
+    const s1 = sp(1), s2 = sp(2), g3 = ex({}, 3);
+    expect(report(g3, [s1, s2, g3]).base?.hr).toBeNaN();
+  });
+});

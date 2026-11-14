@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ACTIONS, RULE } from "@/lib/actions";
 import { examsOf, exportJson, getCrew, getExam } from "@/lib/db";
+import { insights } from "@/lib/insights";
 import { say } from "@/lib/say";
 import { LIMITS, report } from "@/lib/scoring";
 import type { Crew, Flag, Report, Results, Sway } from "@/lib/types";
@@ -19,7 +20,7 @@ const pace = (f: number) => {
   return p === 0 ? "same speed" : `${p}% ${f > 0 ? "slower" : "faster"}`;
 };
 
-type Data = { r: Report; s?: Crew; x?: Crew; k: number };
+type Data = { r: Report; s?: Crew; x?: Crew; k: number; tips: string[] };
 
 export default function Result() {
   const id = useSearchParams().get("id") ?? "";
@@ -33,7 +34,8 @@ export default function Result() {
       const e = await getExam(id);
       if (!e) return setErr("This exam is not on this device.");
       const [hist, s, x] = await Promise.all([examsOf(e.subj), getCrew(e.subj), getCrew(e.exr)]);
-      setD({ r: report(e, hist), s, x, k: hist.findIndex((h) => h.id === e.id) + 1 });
+      const upto = hist.filter((h) => h.at <= e.at);
+      setD({ r: report(e, hist), s, x, k: hist.findIndex((h) => h.id === e.id) + 1, tips: insights(upto) });
     })().catch(() => setErr("Could not open exam records."));
   }, [id]);
 
@@ -57,7 +59,9 @@ export default function Result() {
   }
   if (!d) return <p className="text-dim">Loading result…</p>;
 
-  const { r, s, x, k } = d;
+  const { r, s, x, k, tips } = d;
+  const fin = (v?: number | null) => typeof v === "number" && Number.isFinite(v);
+  const sp = !!r.exam.res.space;
   const sn = s?.name ?? "Unknown";
   const xn = x?.name ?? "Unknown";
   const when = new Date(r.exam.at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -88,9 +92,24 @@ export default function Result() {
         <p className="text-lg">Every station is inside {sn}&apos;s usual range and the fixed limits. Swap roles and examine {xn} next.</p>
       )}
 
+      {tips.length > 0 && (
+        <section className="flex flex-col gap-2" aria-labelledby="noticed">
+          <h2 id="noticed" className="text-xl font-semibold">
+            What we noticed
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {tips.map((t) => (
+              <li key={t} className="border-l-2 border-accent pl-3">
+                {t}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="flex flex-col gap-4" aria-labelledby="all">
         <h2 id="all" className="text-xl font-semibold">
-          All five stations
+          {sp ? "Stations (in space)" : "All five stations"}
         </h2>
         {!r.base && (
           <p className="text-dim">
@@ -99,20 +118,26 @@ export default function Result() {
         )}
         <ul className="flex flex-col divide-y divide-rule border-y border-rule">
           <Row name="Pupils" flag={hit("pupils")} today={`Left ${r.exam.res.pupils.l}, right ${r.exam.res.pupils.r}`} usual={r.base && (r.base.pupil === 0 ? "both brisk" : `${r.base.pupil.toFixed(1)} of 4 points`)} />
-          <Row
-            name="Heart rate"
-            flag={hit("hr")}
-            today={`Rose ${r.m.hr} bpm on standing`}
-            more={`${r.exam.res.hr.sit * 4} sitting, ${r.exam.res.hr.stand * 4} standing`}
-            usual={r.base && `rose ${Math.round(r.base.hr)} bpm`}
-            change={r.delta && `${sign(r.delta.hr)} bpm`}
-          />
-          <Row
-            name="Balance"
-            flag={hit("bal")}
-            today={r.exam.res.bal.sway === "out" ? `Stepped out at ${r.exam.res.bal.secs} s` : SWAY[r.exam.res.bal.sway]}
-            usual={r.base && SWAY[SWAYS[Math.round(r.base.bal)]].toLowerCase()}
-          />
+          {sp ? (
+            <Row name="Heart rate and balance" flag={false} today="Skipped: they need gravity" />
+          ) : (
+            <>
+              <Row
+                name="Heart rate"
+                flag={hit("hr")}
+                today={`Rose ${Math.round(r.m.hr)} bpm on standing`}
+                more={`${Math.round(r.exam.res.hr.sit * 4)} sitting, ${Math.round(r.exam.res.hr.stand * 4)} standing`}
+                usual={r.base && fin(r.base.hr) ? `rose ${Math.round(r.base.hr)} bpm` : null}
+                change={r.delta && fin(r.delta.hr) ? `${sign(r.delta.hr)} bpm` : null}
+              />
+              <Row
+                name="Balance"
+                flag={hit("bal")}
+                today={r.exam.res.bal.sway === "out" ? `Stepped out at ${r.exam.res.bal.secs} s` : SWAY[r.exam.res.bal.sway]}
+                usual={r.base && fin(r.base.bal) ? SWAY[SWAYS[Math.round(r.base.bal)]].toLowerCase() : null}
+              />
+            </>
+          )}
           <Row
             name="Sleep and mood"
             flag={hit("mood")}
@@ -132,13 +157,16 @@ export default function Result() {
       </section>
 
       <div className="grid grid-cols-2 gap-2">
-        <Link href="/" className={ghost}>
-          Back to crew
+        <Link href={{ pathname: "/trend", query: { crew: r.exam.subj } }} className={ghost}>
+          {sn}&apos;s trends
         </Link>
         <button type="button" onClick={() => exportJson()} className={ghost}>
           Export data
         </button>
       </div>
+      <Link href="/" className="w-fit text-dim hover:text-ink">
+        ← Back to crew
+      </Link>
 
       <p className="text-sm text-dim">Prototype. Not a medical device. Records stay on this device.</p>
 
