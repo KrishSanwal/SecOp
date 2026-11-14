@@ -1,11 +1,12 @@
 "use client";
 
-import { DownloadSimple, Eye, Heartbeat, Lightning, MoonStars, PersonSimple, Warning, type Icon } from "@phosphor-icons/react";
+import { ChartLineUp, DownloadSimple, Eye, Heartbeat, Lightning, MoonStars, PersonSimple, Warning, type Icon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ACTIONS, RULE } from "@/lib/actions";
 import { examsOf, exportJson, getCrew, getExam } from "@/lib/db";
+import { insights } from "@/lib/insights";
 import { say } from "@/lib/say";
 import { LIMITS, report } from "@/lib/scoring";
 import type { Crew, Flag, Report, Results, Sway } from "@/lib/types";
@@ -21,7 +22,7 @@ const pct = (f: number, up: string, down: string, same: string) => {
   return p === 0 ? same : `${p}% ${f > 0 ? up : down}`;
 };
 
-type Data = { r: Report; s?: Crew; x?: Crew; k: number };
+type Data = { r: Report; s?: Crew; x?: Crew; k: number; tips: string[] };
 
 export default function Result() {
   const id = useSearchParams().get("id") ?? "";
@@ -35,7 +36,8 @@ export default function Result() {
       const e = await getExam(id);
       if (!e) return setErr("This exam is not on this device.");
       const [hist, s, x] = await Promise.all([examsOf(e.subj), getCrew(e.subj), getCrew(e.exr)]);
-      setD({ r: report(e, hist), s, x, k: hist.findIndex((h) => h.id === e.id) + 1 });
+      const upto = hist.filter((h) => h.at <= e.at);
+      setD({ r: report(e, hist), s, x, k: hist.findIndex((h) => h.id === e.id) + 1, tips: insights(upto) });
     })().catch(() => setErr("Could not open exam records."));
   }, [id]);
 
@@ -58,14 +60,14 @@ export default function Result() {
   }
   if (!d) return <p className="font-mono text-dim">Loading result…</p>;
 
-  const { r, s, x, k } = d;
+  const { r, s, x, k, tips } = d;
   const res = r.exam.res;
   const b = r.base;
   const sn = s?.name ?? "Unknown";
   const xn = x?.name ?? "Unknown";
   const when = new Date(r.exam.at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   const hit = (stn: keyof Results) => r.flags.some((f) => f.stn === stn);
-  const away = !ok(res.hr.sit);
+  const away = !!res.space || !ok(res.hr.sit);
 
   const pupMore = ok(r.m.plat) ? `Camera: reacted in ${Math.round(r.m.plat)} ms, shrank ${Math.round(r.m.pcon * 100)}%${ok(res.pupils.asym) ? `, eyes ${Math.round(res.pupils.asym * 100)} pts apart` : ""}` : "";
   const pupUsual = b && (ok(b.plat) && ok(r.m.plat) ? `${Math.round(b.plat)} ms, shrank ${Math.round(b.pcon * 100)}%` : b.pupil === 0 ? "both brisk" : ok(b.pupil) ? `${b.pupil.toFixed(1)} of 4 points` : null);
@@ -85,7 +87,7 @@ export default function Result() {
           {n ? `${n} ${n === 1 ? "result needs" : "results need"} attention` : "All clear today"}
         </h1>
         <p className="text-lg text-dim">
-          {sn}, examined by {xn}.{away && " In transit: heart rate and balance were skipped."}
+          {sn}, examined by {xn}.{away && " In space: heart rate and balance were skipped."}
         </p>
       </header>
 
@@ -103,6 +105,21 @@ export default function Result() {
         <p className="text-lg">Every station is inside {sn}&apos;s usual range and the fixed limits. Swap roles and examine {xn} next.</p>
       )}
 
+      {tips.length > 0 && (
+        <section className="flex flex-col gap-3" aria-labelledby="noticed">
+          <h2 id="noticed" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
+            <span aria-hidden>{"// "}</span>what we noticed
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {tips.map((t) => (
+              <li key={t} className="border-l-2 border-accent pl-3 text-lg">
+                {t}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="flex flex-col gap-4" aria-labelledby="all">
         <h2 id="all" className="font-mono text-xs font-normal tracking-[0.14em] text-accent uppercase">
           <span aria-hidden>{"// "}</span>all stations
@@ -115,7 +132,7 @@ export default function Result() {
         <ul className="flex flex-col divide-y divide-rule border-y border-rule">
           <Row I={Eye} name="Pupils" flag={hit("pupils")} today={`Left ${res.pupils.l}, right ${res.pupils.r}`} more={pupMore} usual={pupUsual} change={pupChange} />
           {away ? (
-            <Row I={Heartbeat} name="Heart rate" flag={false} today="Skipped: in transit" more="Needs gravity" />
+            <Row I={Heartbeat} name="Heart rate" flag={false} today="Skipped: in space" more="Needs gravity" />
           ) : (
             <Row
               I={Heartbeat}
@@ -128,7 +145,7 @@ export default function Result() {
             />
           )}
           {away ? (
-            <Row I={PersonSimple} name="Balance" flag={false} today="Skipped: in transit" more="Needs gravity" />
+            <Row I={PersonSimple} name="Balance" flag={false} today="Skipped: in space" more="Needs gravity" />
           ) : (
             <Row I={PersonSimple} name="Balance" flag={hit("bal")} today={balToday} more={balCam && res.bal.sway !== "out" ? `Held ${res.bal.secs} s, motion sensor` : ""} usual={balUsual} change={balChange} />
           )}
@@ -153,8 +170,9 @@ export default function Result() {
       </section>
 
       <div className="grid grid-cols-2 gap-2">
-        <Link href="/" className={ghost}>
-          Back to crew
+        <Link href={{ pathname: "/trend", query: { crew: r.exam.subj } }} className={ghost}>
+          <ChartLineUp size={20} weight="bold" aria-hidden />
+          {sn.split(" ")[0]}&apos;s trends
         </Link>
         <button type="button" onClick={() => exportJson()} className={ghost}>
           <DownloadSimple size={20} weight="bold" aria-hidden />

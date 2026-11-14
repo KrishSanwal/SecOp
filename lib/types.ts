@@ -7,6 +7,7 @@ export interface Results {
   bal: { sway: Sway; secs: number; rms?: number }; // rms: m/s^2 from motion sensor
   mood: { sleep: number; score: 1 | 2 | 3 | 4 | 5; note: string };
   rx: { ms: number[] };
+  space?: boolean; // done in microgravity: no standing HR or balance
 }
 
 export interface Exam {

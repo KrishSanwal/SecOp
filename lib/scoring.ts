@@ -17,16 +17,17 @@ export function median(xs: number[]): number {
 
 export function metrics(e: Exam): Metrics {
   const r = e.res;
+  const g = !r.space;
   return {
     pupil: PUP[r.pupils.l] + PUP[r.pupils.r],
-    hr: (r.hr.stand - r.hr.sit) * 4,
-    bal: SWAY[r.bal.sway],
+    hr: g ? (r.hr.stand - r.hr.sit) * 4 : NaN,
+    bal: g ? SWAY[r.bal.sway] : NaN,
     sleep: r.mood.sleep,
     mood: r.mood.score,
     rx: median(r.rx.ms),
     plat: num(r.pupils.lat),
     pcon: num(r.pupils.con),
-    brms: num(r.bal.rms),
+    brms: g ? num(r.bal.rms) : NaN,
   };
 }
 

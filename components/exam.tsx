@@ -41,16 +41,16 @@ export default function Exam() {
   const on = useRef(true);
   const [saved, setSaved] = useState("");
   const [leave, setLeave] = useState(false);
-  const [where, setWhere] = useState<"surface" | "transit">(() => {
+  const [where, setWhere] = useState<"surface" | "space">(() => {
     try {
-      return localStorage.getItem(WHERE) === "transit" ? "transit" : "surface";
+      return localStorage.getItem(WHERE) === "space" ? "space" : "surface";
     } catch {
       return "surface";
     }
   });
   const ok = sid && xid && sid !== xid;
   const bad = ok ? err : "Pick two different crew members first.";
-  const list = where === "transit" ? ALL.filter((s) => s.k !== "hr" && s.k !== "bal") : ALL;
+  const list = where === "space" ? ALL.filter((s) => s.k !== "hr" && s.k !== "bal") : ALL;
 
   useEffect(() => {
     if (!ok) return;
@@ -84,7 +84,7 @@ export default function Exam() {
     setVoice(!voice);
   }
 
-  function pick(w: "surface" | "transit") {
+  function pick(w: "surface" | "space") {
     setWhere(w);
     try {
       localStorage.setItem(WHERE, w);
@@ -102,9 +102,10 @@ export default function Exam() {
     const all = { ...res, ...p };
     setRes(all);
     if (n < list.length - 1) return setN(n + 1);
-    if (where === "transit") {
+    if (where === "space") {
       all.hr = { sit: NaN, stand: NaN };
       all.bal = { sway: "none", secs: 0 };
+      all.space = true;
     }
     const id = uid();
     try {
@@ -213,7 +214,7 @@ export default function Exam() {
   );
 }
 
-function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "transit"; onWhere: (w: "surface" | "transit") => void; onGo: () => void }) {
+function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "space"; onWhere: (w: "surface" | "space") => void; onGo: () => void }) {
   useCues("start");
   return (
     <>
@@ -231,8 +232,8 @@ function Intro(p: { s: Crew; x: Crew; list: typeof ALL; where: "surface" | "tran
           value={p.where}
           onChange={p.onWhere}
           opts={[
-            ["surface", "On a surface", "or after landing: all five"],
-            ["transit", "In transit", "weightless: skips heart and balance"],
+            ["surface", "On a surface", "Moon, Mars, or after landing"],
+            ["space", "In space", "No gravity: skips heart and balance"],
           ]}
         />
         <ol className="flex flex-col divide-y divide-rule border-y border-rule">
