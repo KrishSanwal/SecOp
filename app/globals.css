@@ -1,22 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0d10;
-  --foreground: #e6e8eb;
-  --accent: #5eead4;
+  --cabin: #121b24;
+  --panel: #19242f;
+  --rule: #283746;
+  --edge: #5c7083;
+  --ink: #e6edf2;
+  --dim: #97a8b7;
+  --accent: #8ec9ff;
+  --on-accent: #0a1b2c;
+  --alert: #ffb4a8;
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-cabin: var(--cabin);
+  --color-panel: var(--panel);
+  --color-rule: var(--rule);
+  --color-edge: var(--edge);
+  --color-ink: var(--ink);
+  --color-dim: var(--dim);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-on-accent: var(--on-accent);
+  --color-alert: var(--alert);
+  --color-background: var(--cabin);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-atkinson);
+  --font-mono: var(--font-atkinson-mono);
+  --animate-swap: swap 220ms ease-out;
+
+  @keyframes swap {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--cabin);
+  color: var(--ink);
+  font-family: var(--font-atkinson), system-ui, sans-serif;
 }
