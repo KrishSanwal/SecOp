@@ -8,7 +8,7 @@ Rules from the submission guide: 30 s max, no NASA logos, nothing fabricated. Fi
 - Lighting: a window or a desk lamp on the face, no light behind. Dark eyes need the flash, which the app does.
 - Record every clip 2 to 3 times. Cut in CapCut or the phone's editor. Captions on, no music louder than the voice.
 
-## Script, filmed apart (Shaurya edits with ffmpeg)
+## Script, filmed apart (Krish edits)
 
 Everyone films **landscape**, phone sideways, 1080p, in a quiet room with a window or lamp in front of the face. Say each line twice in one clip, pause two seconds between takes. Look at the lens. Screen recordings are the phone's built-in recorder, portrait is fine.
 

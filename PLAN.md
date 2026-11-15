@@ -129,8 +129,9 @@ A = Shaurya, B = Krish. Taken from what each of us actually committed.
 | 24 | Live site on Vercel: getsecop.vercel.app | B | done |
 | 25 | Google keys on Vercel so a real band works on the live site | B | to do |
 | 26 | Pitch kit: 3-minute pitch, slides, judge Q&A, ideas | A | done |
-| 27 | Demo video: shot list, script, filming, final edit | A | in progress |
-| 28 | Submission form, NASA links, AI disclosure, Submit for Judging | A + B | to do |
+| 27 | Demo video: shot list and script | A | done |
+| 28 | Demo video: filming and final edit | B | done |
+| 29 | Submission form, NASA links, AI disclosure, Submit for Judging | A + B | to do |
 
 ## Timeline (IST)
 
