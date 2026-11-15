@@ -8,20 +8,38 @@ Rules from the submission guide: 30 s max, no NASA logos, nothing fabricated. Fi
 - Lighting: a window or a desk lamp on the face, no light behind. Dark eyes need the flash, which the app does.
 - Record every clip 2 to 3 times. Cut in CapCut or the phone's editor. Captions on, no music louder than the voice.
 
-## Script (YC style: what it is in sentence one, one number, show the magic, why it matters)
+## Script, filmed apart (Shaurya edits with ffmpeg)
 
-| Time | Shot | Voice-over (82 words, normal pace) |
+Everyone films **landscape**, phone sideways, 1080p, in a quiet room with a window or lamp in front of the face. Say each line twice in one clip, pause two seconds between takes. Look at the lens. Screen recordings are the phone's built-in recorder, portrait is fine.
+
+Drop every file in `Vault/Inbox/secop-video/` with the exact names below.
+
+### Krish's clips (to camera, 3 lines)
+| File | Say |
+|---|---|
+| K1.mp4 | "A message from Mars takes eleven minutes each way. There is no doctor on board. And NASA's own research says astronauts don't report symptoms." |
+| K2.mp4 | "So your crewmate checks you. Everything is scored against your own normal, not a textbook." |
+| K3.mp4 | "Every flag maps to NASA's medical checklist, and the note for the flight surgeon fits one text message." |
+
+### Shaurya's clips (to camera, 2 lines)
+| File | Say |
+|---|---|
+| S1.mp4 | "We're Vortexx. SecOp is a five-minute health check two astronauts give each other with the phone in their pocket. No internet." |
+| S2.mp4 | "We built it in two days. It works in airplane mode. SecOp." (hold the phone up, airplane icon visible) |
+
+### Shaurya's demo clips (airplane mode on, Try demo loaded, permissions already granted)
+| File | What | How |
 |---|---|---|
-| 0-4 s | Shaurya to camera, phone in hand, Krish beside. | "We're Vortexx. SecOp is a five-minute health check two astronauts give each other with the phone in their pocket. No internet." |
-| 4-8 s | Black card: "Mars: 11 minutes each way. No doctor." | "A message from Mars takes eleven minutes. There is no doctor on board. And NASA's own research says astronauts don't report symptoms." |
-| 8-11 s | Krish holds the phone to Shaurya's eye. Flash. Pupil curve draws. | "So your crewmate checks you. The camera times your pupil." |
-| 11-15 s | Fingertip on the camera. Pulse wave scrolls, bpm lands, phone buzzes. | "The camera reads your pulse. You feel it in your hand." |
-| 15-18 s | Phone on the chest, eyes closed, beeps, "Looks normal". | "The motion sensor measures your balance." |
-| 18-25 s | Screen record: result card, three flags, "Do now", Mars countdown. | "Everything is scored against your own normal. When something slips, it says what NASA's medical checklist says to do, and queues a 150-character note for the flight surgeon." |
-| 25-28 s | QR loop, second phone "2 of 3". Crew board. | "Records move phone to phone. Still no network." |
-| 28-30 s | Both to camera. Airplane icon on screen. | "We built it in two days. It works in airplane mode. SecOp." |
+| D1.mp4 | Pupil test | Film the phone from behind with a second phone, or do it on yourself: /lab/pupil, back camera to your own eye in a mirror is hard, so use the front-camera fallback and let the curve draw. 8 s. |
+| D2.mp4 | Pulse | Second phone films your hand: fingertip on the back camera, wave scrolls, bpm lands, hand visibly buzzes. 8 s. |
+| D3.mp4 | Balance | Phone on chest, eyes closed, beeps, "Looks normal". 6 s. |
+| D4.mp4 | Result card | Screen recording: Asha's latest exam, scroll slowly past the three flags and "Do now", stop on the Mars countdown. 10 s. |
+| D5.mp4 | QR loop | Screen recording of the code looping, 4 s. If a second phone is handy, film it showing "2 of 3". |
 
-Delivery: look at the lens, not the screen. Sentences end down, not up. Cut the clip the moment the sentence ends. If it runs over 30 s, drop the "Records move phone to phone" line first.
+If you have no second phone for D1 and D2, screen-record /lab/pupil and /lab/hr instead; the wave and the curve carry the shot.
+
+### Cut order (30 s)
+S1 (4 s) → K1 (5 s) → D1 (3 s) → D2 (4 s) → D3 (3 s) → K2 (3 s) → D4 (5 s) → K3 (3 s) → S2 (2 s). Captions on every line. Portrait screen clips sit centred on the dark background.
 
 ## Live pitch, 2 minutes, same structure
 1. **What it is (10 s).** "SecOp is a five-minute health check two astronauts give each other with a phone. It works with no internet, and it compares you with your own normal, not a textbook."
