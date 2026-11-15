@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Creates one GitHub issue per task in PLAN.md. Run once, after the repo exists:
-#   bash tools/create-issues.sh shauryalowkeygotaura/second-opinion
+#   bash tools/create-issues.sh KrishSanwal/SecOp
 set -euo pipefail
 REPO="${1:?usage: create-issues.sh owner/repo}"
 

@@ -4,7 +4,7 @@ Rules from the submission guide: 30 s max, no NASA logos, nothing fabricated. Fi
 
 ## Setup (10 min, before any filming)
 - Two phones: phone A runs the app, phone B films. Or scrcpy on the laptop and screen-record.
-- Phone A: open https://second-opinion-ruddy.vercel.app, tap Try demo, run one exam once so the camera and sensor permissions are already granted. Then airplane mode ON. Brightness max.
+- Phone A: open https://getsecop.vercel.app, tap Try demo, run one exam once so the camera and sensor permissions are already granted. Then airplane mode ON. Brightness max.
 - Lighting: a window or a desk lamp on the face, no light behind. Dark eyes need the flash, which the app does.
 - Record every clip 2 to 3 times. Cut in CapCut or the phone's editor. Captions on, no music louder than the voice.
 
