@@ -7,6 +7,7 @@ Deadline: **Sunday 15 Nov 2026, 11:59 PM IST.** Submission is final. Demo video:
 Two astronauts examine each other for five minutes; the phone's own camera and motion sensor take the
 measurements, the app compares each person against their own previous sessions, and tells them what to
 do next using NASA's ISS Medical Checklist. The examiner holds and positions the phone; they do not judge.
+An optional wearables page adds daily context from a Fitbit Air band. The exam never depends on it.
 
 ## Design (decided)
 
@@ -50,23 +51,51 @@ Dark brown eyes are the known risk; verify with `/lab/pupil` before relying on i
 - IndexedDB (`idb` package). One store: `exams` keyed by id, with `subjectId`, `examinerId`,
   `timestamp`, five station results. One store: `crew` with names and baselines.
 - Export as JSON from the results screen.
+- Wearables use a separate database, `second-opinion-wearables`, with one store `pulls` keyed by crew id
+  (the last sync only). Database names kept the old app name on purpose, so saved data survives the rename.
+
+### Wearables (optional, added Sun 15 Nov, Krish, PR #26)
+- `/wearables?crew=` shows daily readings from a Fitbit Air through the Google Health API: resting and
+  sleeping heart rate, HRV, sleep (deep, REM), blood oxygen, breathing rate, skin temperature, steps,
+  active minutes, cardio fitness, sedentary time, irregular rhythm alerts. `/wearables/metric?crew=&m=`
+  shows one reading with a line chart and plain "what this means" and "on a mission" text.
+- Sign-in: Google OAuth per crew member, read-only scopes. `/api/health/auth` sends the user to Google,
+  `/api/health/callback` keeps the refresh token in an httpOnly cookie scoped to `/api/health`. No accounts
+  of our own; nothing is stored on a server.
+- Sync: `/api/health/data` (Node runtime) pulls the last 30 days. The last pull is saved in IndexedDB, so
+  the page still reads with no network. Syncing needs a network.
+- Scoring: `lib/health/base.ts` compares the latest value with that person's own 14-day usual (at least
+  5 days of data). Flags (limits in `LIM`): resting or sleeping HR > usual + 6 bpm, HRV < usual - 25%,
+  sleep < 6 h two nights running, SpO2 < 92% or > 3 points below usual, breathing rate > usual + 2/min,
+  skin temperature > +1 °C, any irregular rhythm alert. Verdict: Looks normal, Worth a recheck, or
+  Could not measure.
+- Without `GOOGLE_HEALTH_CLIENT_ID` and `GOOGLE_HEALTH_CLIENT_SECRET` the page shows clearly labelled
+  sample data (`lib/health/demo.ts`).
+- Kept separate from the exam: band flags do not change exam scores or action cards. No AI text (the
+  Groq "note for today" was removed). On a real mission the band would sync over Bluetooth instead of
+  Google; the screens and scoring would not change.
 
 ### Screens (query params, not [id] folders, so the offline cache covers every exam)
 1. `/` Crew: pick subject and examiner (two cards, swap button).
 2. `/exam` Station flow: one station per screen, big timer, voice prompt, buttons.
 3. `/result?id=` Result card: five rows, delta vs baseline, flags, action cards.
-4. `/history?crew=` Timeline of that crew member's exams.
+4. `/trend?crew=` Timeline of that crew member's exams.
+5. `/sync` Phone-to-phone transfer by QR code.
+6. `/wearables?crew=` and `/wearables/metric?crew=&m=` Optional band readings.
+7. `/lab`, `/lab/pupil`, `/lab/hr`, `/lab/sway` Sensor test pages.
 
 Dark UI. One accent colour. No NASA logos anywhere.
 
 ### Not building
-- No wearables, no Bluetooth, no camera-based pupil measurement, no rPPG.
-- No accounts, no server database, no Mission Control view.
+- No wearable required: the exam runs on the phone alone. The wearables page is optional context.
+- No Bluetooth, no rPPG (pulse from the face). Camera pupils and fingertip camera pulse are built.
+- No accounts of our own, no server database, no Mission Control view. The only sign-in is the optional
+  Google one on the wearables page, and the only server code is the three `/api/health` routes.
 - No Hindi in v1 unless everything else is done by Sunday 6 PM.
 
 ## Task split
 
-Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by assigning yourself.
+Owner A = Shaurya. Owner B = Krish. Each task is a GitHub issue. Claim it by assigning yourself.
 
 | # | Task | Owner | Done when |
 |---|---|---|---|
@@ -90,9 +119,16 @@ Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by 
 | 13 | Sensor libs: `lib/pupil.ts`, `lib/ppg.ts`, `lib/sway.ts`, scoring fields, lab pages `/lab/*` | A | done: 24 tests, labs live |
 | 14 | Test `/lab/pupil` on own eyes on a phone; report if the red disc tracks the pupil | A + B | go / no-go for camera pupils |
 | 15 | Wire camera HR + motion balance into `components/exam.tsx` with manual fallback | B | full exam runs with phone sensors |
-| 16 | Wire camera pupils into the exam (only if 14 is a go) | B | pupil station automatic |
+| 16 | Wire camera pupils into the exam (only if 14 is a go) | A | done: pupil station automatic, reflex graph vs last exam |
 | 17 | Result card shows the new numbers vs usual (latency, constriction, sway) | B | numbers visible with "usual" |
 | 18 | In-transit toggle: skip stations 2 and 3 | B | toggle on intro screen |
+
+## Wearables (added Sun 15 Nov)
+
+| # | Task | Owner | Done when |
+|---|---|---|---|
+| 19 | `/wearables`: Google Health sign-in, sync, 14-day usual, flags, sample data, offline cache | B | done: PR #26 merged |
+| 20 | Google OAuth keys on Vercel (optional, only for a live band in the demo) | A | sign-in reaches the Google consent screen |
 
 ## Timeline (IST)
 

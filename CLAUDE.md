@@ -6,7 +6,8 @@ Read `PLAN.md` first. It is the design and the task list.
   build-time only). Never edge-tts, never VAPI, never ElevenLabs, never Twilio, no runtime LLM calls.
 - Vercel: never set `runtime = 'edge'` on any route. Node runtime only.
 - Buttons are the primary input. Voice is a layer on top. Never make a step voice-only.
-- Storage is IndexedDB in the browser. No server database, no accounts.
+- Storage is IndexedDB in the browser. No server database, no accounts of our own. The one exception is
+  the optional Google sign-in on the wearables page (`/api/health`); the exam must never depend on it.
 - No NASA logos, flags or mission identifiers anywhere, including generated images.
 - Any AI-generated image or audio in the demo carries a visible watermark or a text acknowledgement.
 - Code style: almost no comments. Only when the why is not obvious, and one short line max. No

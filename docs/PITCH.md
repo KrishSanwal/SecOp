@@ -15,7 +15,7 @@ Local Delhi judges run their own format; assume a short live pitch plus question
 | 0:40 | Krish | Live demo: Try demo -> result card with 3 flags. "Asha's right pupil is slow, her heart rate jumps 36 bpm on standing, reactions are 25% slower than *her* normal." | Phone, mirrored to screen |
 | 1:20 | Krish | Do the heart-rate test live on a judge or yourself: fingertip on camera, number appears. | Phone |
 | 1:45 | Shaurya | "Every flag comes with 'do now' and 'when to call the surgeon', straight from NASA's ISS Medical Checklist. Airplane mode is on right now." Point at it. | Result card, airplane icon |
-| 2:10 | Shaurya | "The camera times the pupil reflex, the camera reads your pulse, the motion sensor measures sway. No wearables, no cloud, compared against your own baseline, not a textbook average." | One slide, 3 icons |
+| 2:10 | Shaurya | "The camera times the pupil reflex, the camera reads your pulse, the motion sensor measures sway. No wearable needed, no cloud, compared against your own baseline, not a textbook average." | One slide, 3 icons |
 | 2:35 | Krish | "Next: an analog-mission pilot, a red filter that makes phone pupillometry work on dark eyes, and the same exam for Antarctic stations and rural health workers." | Roadmap slide |
 | 2:55 | Both | "SecOp. Because nobody should be their own doctor 225 million km from Earth." | End |
 
