@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     const crew = req.nextUrl.searchParams.get("crew");
     if (!okCrew(crew)) throw new HError(400, "crew required");
     const rt = req.cookies.get(`gh_${crew}`)?.value;
-    if (!rt) throw new HError(401, "Actiwatch not connected.");
+    if (!rt) throw new HError(401, "Monitor not connected.");
     const n = Number(req.nextUrl.searchParams.get("days"));
     const days = Number.isInteger(n) && n >= 7 && n <= 60 ? n : 30;
     try {

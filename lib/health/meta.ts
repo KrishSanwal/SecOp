@@ -65,7 +65,7 @@ export const META: Meta[] = [
   },
   {
     k: "irn", t: "Irregular rhythm alerts", unit: "alerts", group: "Overnight", worse: 1, fmt: (v) => (v === 0 ? "None" : `${n0(v)} today`),
-    what: "The Actiwatch can notice a pulse pattern that looks irregular and send an alert. It is a prompt to check in, not a diagnosis.",
+    what: "The Bio-Monitor can notice a pulse pattern that looks irregular and send an alert. It is a prompt to check in, not a diagnosis.",
     space: "Any alert should be reported to the flight surgeon, who can ask for an ECG.",
   },
 ];

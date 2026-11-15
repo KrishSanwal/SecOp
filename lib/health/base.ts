@@ -55,13 +55,13 @@ export function flags(days: Day[]): HFlag[] {
   const tmp = cur("tmp");
   if (tmp && tmp.v > LIM.tmpUp) add("tmp_up", "tmp", `Skin temperature ran ${tmp.v.toFixed(1)} °C above your normal.`);
   const irn = days.at(-1)?.irn;
-  if (irn && irn > 0) add("irn", "irn", "The Actiwatch sent an irregular rhythm alert.");
+  if (irn && irn > 0) add("irn", "irn", "The Bio-Monitor sent an irregular rhythm alert.");
   return out;
 }
 
 export function verdict(days: Day[], fl: HFlag[]): { t: string; why: string } {
   const has = META.some((m) => latest(days, m.k));
-  if (!has) return { t: "Could not measure", why: "No Actiwatch data yet. Wear it overnight and sync." };
+  if (!has) return { t: "Could not measure", why: "No monitor data yet. Wear it overnight and sync." };
   if (!fl.length) return { t: "Looks normal", why: "Everything is close to your usual." };
   const rec = fl.filter((f) => ["rhr_up", "shr_up", "hrv_low", "slp_low"].includes(f.id)).length;
   return {
