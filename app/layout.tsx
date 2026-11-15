@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible_Next } from "next/font/google";
 import "./globals.css";
 import { SW } from "./sw";
+import { Translator } from "@/components/lang";
 
 const sans = Atkinson_Hyperlegible_Next({
   variable: "--font-atkinson",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${sans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <SW />
+        <Translator />
         {children}
       </body>
     </html>

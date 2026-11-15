@@ -28,9 +28,9 @@
   --color-alert: var(--alert);
   --color-background: var(--cabin);
   --color-foreground: var(--ink);
-  --font-sans: var(--font-atkinson);
-  --font-display: var(--font-atkinson);
-  --font-mono: var(--font-atkinson);
+  --font-sans: var(--font-atkinson), system-ui, sans-serif;
+  --font-display: var(--font-atkinson), system-ui, sans-serif;
+  --font-mono: var(--font-atkinson), system-ui, sans-serif;
   --animate-swap: swap 220ms ease-out;
   --animate-blink: blink 1.1s steps(1) infinite;
 

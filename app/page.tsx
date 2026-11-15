@@ -3,6 +3,7 @@ import CrewPick from "@/components/crew-pick";
 import Demo from "@/components/demo";
 import CrewBoard from "@/components/crew-board";
 import { Logo } from "@/components/logo";
+import { LangSwitch } from "@/components/lang";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
           Sensors
         </Link>
         <Demo />
+        <LangSwitch />
       </header>
       <CrewPick />
       <CrewBoard />
