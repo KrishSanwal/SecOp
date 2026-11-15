@@ -7,7 +7,6 @@ import { ghost } from "./ui";
 
 const TODAY = mars(new Date()); // once per page load; drifts by seconds, not minutes
 
-/** Queue the exam for Mission Control, with today's real Earth-Mars light delay. */
 export function Surgeon({ r, name, space }: { r: Report; name: string; space: boolean }) {
   const m = TODAY;
   const msg = useMemo(() => packet(name, r.exam.at, r.flags.map((f) => f.id), r.m as unknown as Record<string, number>), [r, name]);

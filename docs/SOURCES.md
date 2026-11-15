@@ -33,6 +33,6 @@ Keys in brackets are how `CHECKLIST_MAP.md` cites them. All links below were che
 
 | Name | URL | Used for |
 |---|---|---|
-| Groq API | https://groq.com/ | speech to text, parsing, text to speech |
+| Groq API | https://groq.com/ | Orpheus text-to-speech, used once to record the fixed voice prompts |
 | Next.js | https://nextjs.org/ | web framework |
 | idb | https://github.com/jakearchibald/idb | IndexedDB wrapper |

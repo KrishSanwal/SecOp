@@ -88,7 +88,6 @@ export function Bar({ f }: { f: number }) {
   );
 }
 
-// Speaks `cue`, then counts `secs` down; speaks `end` and calls onDone at zero.
 export function Timed(p: {
   cue?: PromptId;
   end?: PromptId;

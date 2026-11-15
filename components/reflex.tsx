@@ -1,6 +1,5 @@
 import { CURVE_STEP, CURVE_T0 } from "@/lib/pupil";
 
-/** Pupil size over time around the flash; `prev` is the last exam's curve, drawn faint. */
 export function ReflexGraph({ now, prev }: { now: number[]; prev?: number[] | null }) {
   const W = 320, H = 110, px = 8, py = 10;
   const all = [...now, ...(prev ?? [])].filter(Number.isFinite);

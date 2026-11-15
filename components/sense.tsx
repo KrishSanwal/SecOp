@@ -40,7 +40,6 @@ function Fail({ why, again, other, otherLabel }: { why: string; again: () => voi
   );
 }
 
-// Fingertip over the back camera with the torch on; resolves one heart rate.
 export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHand: () => void }) {
   const vid = useRef<HTMLVideoElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -184,7 +183,6 @@ export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHan
   );
 }
 
-// Phone flat on the chest, eyes closed. Motion permission must already be granted (askMotion from a tap).
 export function MotionBal({ onRead, onHand }: { onRead: (r: SwayResult) => void; onHand: () => void }) {
   const read = useRef(onRead);
   const [go, setGo] = useState(0);
@@ -274,8 +272,6 @@ export function MotionBal({ onRead, onHand }: { onRead: (r: SwayResult) => void;
 
 export type EyeRead = { con: number; lat: number; ok: boolean; curve: number[] };
 
-// Back camera held by the examiner, flash as the light (front camera + screen flash if no torch).
-// Measures the right eye then the left; resolves both reflexes.
 export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeRead }) => void; onHand: () => void }) {
   const vid = useRef<HTMLVideoElement>(null);
   const work = useRef<HTMLCanvasElement>(null);

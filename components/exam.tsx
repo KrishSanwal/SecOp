@@ -309,7 +309,6 @@ function Pupils({ onDone, next }: Step) {
     if (await talk("pupil_intro")) talk("pupil_left");
   };
   const start = () => setStep("cam");
-  // Camera: brisk if it shrank 12%+ within 500 ms; unequal if the eyes differ by 10 points.
   const rate = (e: EyeRead): Pupil => (e.ok && e.con >= 0.12 && e.lat <= 500 ? "brisk" : "sluggish");
   const got = (c: { r: EyeRead; l: EyeRead }) => {
     const asym = c.r.ok && c.l.ok ? Math.abs(c.r.con - c.l.con) : NaN;

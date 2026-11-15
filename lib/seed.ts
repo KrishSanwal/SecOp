@@ -12,7 +12,6 @@ const norm = (rx: number, sleep: number): Results => ({
   rx: { ms: ms(rx) },
 });
 
-// Two crew, two baseline exams each, then one drifted exam for Asha. Returns that exam's id.
 export async function seed(): Promise<string> {
   const a = { id: uid(), name: "Asha", role: "Commander" };
   const r = { id: uid(), name: "Ravi", role: "Flight engineer" };
@@ -22,7 +21,6 @@ export async function seed(): Promise<string> {
   const now = Date.now();
   const ex = (subj: string, exr: string, daysAgo: number, res: Results): Exam => ({ id: uid(), subj, exr, at: now - daysAgo * DAY, res });
 
-  // Asha drifts slowly over two weeks; Ravi stays steady.
   const xs: Exam[] = [
     ex(a.id, r.id, 14, norm(290, 7.5)),
     ex(a.id, r.id, 11, norm(300, 7)),

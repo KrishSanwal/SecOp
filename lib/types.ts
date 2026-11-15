@@ -2,12 +2,12 @@ export type Pupil = "brisk" | "sluggish" | "unequal";
 export type Sway = "none" | "mild" | "marked" | "out";
 
 export interface Results {
-  pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number; curve?: number[] }; // camera: ms, share, |L-R| con, size vs before flash per 100 ms
-  hr: { sit: number; stand: number; cam?: boolean }; // beats per 15 s (camera writes bpm / 4)
-  bal: { sway: Sway; secs: number; rms?: number }; // rms: m/s^2 from motion sensor
+  pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number; curve?: number[] };
+  hr: { sit: number; stand: number; cam?: boolean };
+  bal: { sway: Sway; secs: number; rms?: number };
   mood: { sleep: number; score: 1 | 2 | 3 | 4 | 5; note: string };
   rx: { ms: number[] };
-  space?: boolean; // done in microgravity: no standing HR or balance
+  space?: boolean;
 }
 
 export interface Exam {

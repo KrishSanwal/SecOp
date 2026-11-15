@@ -11,7 +11,7 @@ self.addEventListener("install", (e) => {
       const c = await caches.open(V);
       const ids = await within(fetch("/audio/index.json").then((r) => r.json()), 5000).catch(() => null);
       const urls = [...PAGES, ...MP, "/manifest.webmanifest", "/audio/index.json", ...(ids || []).map((id) => `/audio/${id}.mp3`)];
-      await within(Promise.all(urls.map((u) => c.add(u).catch(() => {}))), 30000); // never block install on one file
+      await within(Promise.all(urls.map((u) => c.add(u).catch(() => {}))), 30000);
     })(),
   );
 });

@@ -16,7 +16,6 @@ export function Page({ title, intro, children }: { title: string; intro: string;
   );
 }
 
-/** Tick-off list. Calls onAll when every item is ticked. */
 export function Prep({ items, onAll }: { items: string[]; onAll: () => void }) {
   const [done, setDone] = useState<boolean[]>(() => items.map(() => false));
   const all = done.every(Boolean);
@@ -45,7 +44,6 @@ export function Prep({ items, onAll }: { items: string[]; onAll: () => void }) {
   );
 }
 
-/** Live readiness: shows only the first thing to fix, or that it is ready. */
 export function Status({ checks, count }: { checks: { ok: boolean; fix: string }[]; count?: number | null }) {
   const bad = checks.find((c) => !c.ok);
   return (
@@ -115,7 +113,6 @@ export function Verdict({
 }
 
 let ac: AudioContext | null = null;
-/** Short tone, for steps done with eyes closed. */
 export function beep(hz = 880, ms = 180) {
   try {
     ac ??= new AudioContext();

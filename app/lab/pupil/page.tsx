@@ -8,7 +8,6 @@ import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame, t
 type Ph = "prep" | "align" | "dark" | "flash" | "done";
 type Mode = "back" | "front";
 
-// Back camera + flash is the method that works best in research (bright light, sharper camera).
 const PREP: Record<Mode, string[]> = {
   back: [
     "A crewmate holds the phone; you are the one being tested",

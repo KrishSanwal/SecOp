@@ -2,7 +2,7 @@ import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 // MediaPipe iris landmarks: centre then 4 edge points.
 const IRIS = { r: [468, 469, 470, 471, 472], l: [473, 474, 475, 476, 477] } as const;
-const LID = { r: [159, 145], l: [386, 374] } as const; // upper, lower
+const LID = { r: [159, 145], l: [386, 374] } as const;
 export type Eye = keyof typeof IRIS;
 
 let lm: Promise<FaceLandmarker> | null = null;
@@ -22,19 +22,18 @@ export function landmarker() {
 
 export interface Frame {
   t: number;
-  ratio: number; // pupil radius / iris radius, NaN if not found
+  ratio: number;
   irisPx: number;
   face: boolean;
-  open: number; // lid gap / iris diameter
-  lum: number; // mean brightness inside the iris, 0-255
+  open: number;
+  lum: number;
   cx: number;
   cy: number;
-  sep: number; // pupil vs iris contrast, 0..1
+  sep: number;
 }
 
 const SIDE = 96;
 
-/** Measure one eye in the current video frame. `dbg` gets the thresholded crop when given. */
 export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: Eye, work: HTMLCanvasElement, dbg?: HTMLCanvasElement): Frame {
   const res = f.detectForVideo(v, t);
   const pts = res.faceLandmarks?.[0];
@@ -67,7 +66,6 @@ export function measure(f: FaceLandmarker, v: HTMLVideoElement, t: number, eye: 
   return { t, ratio: Math.sqrt(frac) * 0.85, irisPx: r, face: true, open, lum: mean, cx, cy, sep };
 }
 
-/** Find the pupil in a square RGBA crop centred on the iris. Pure, for tests. */
 export function segment(data: Uint8ClampedArray, SIDE: number) {
   const px = { data };
   // Red channel: brown irises reflect red, the pupil does not, so this separates them best on RGB cameras.
@@ -85,7 +83,6 @@ export function segment(data: Uint8ClampedArray, SIDE: number) {
   const glint = Math.max(200, sorted[Math.floor(sorted.length * 0.99)] ?? 255); // flash reflection on the cornea
   const th = otsu(vals.filter((v) => v < glint));
 
-  // Grow the pupil from the darkest pixel near the centre; glints inside it count as pupil.
   let seed = -1, best = 1e9;
   for (let y = 0; y < SIDE; y++)
     for (let x = 0; x < SIDE; x++) {
@@ -112,10 +109,8 @@ export function segment(data: Uint8ClampedArray, SIDE: number) {
       }
     }
   }
-  // Pupil area as a share of the inner disk -> radius ratio vs the full iris.
   const frac = dark / (vals.length || 1);
   const mean = vals.reduce((p, q) => p + q, 0) / (vals.length || 1);
-  // Contrast between pupil and the rest of the iris; low = camera can't tell them apart.
   let pin = 0, pn = 0, rin = 0, rn = 0;
   for (let k = 0; k < inP.length; k++) {
     const v = val[k];
@@ -152,7 +147,6 @@ export interface Check {
   fix: string;
 }
 
-/** Live readiness from the last ~0.5 s of frames. */
 export function ready(fs: Frame[]): Check[] {
   const f = fs.at(-1);
   const recent = fs.slice(-15);
@@ -170,17 +164,16 @@ export function ready(fs: Frame[]): Check[] {
 }
 
 export interface Reflex {
-  base: number; // ratio before the flash
+  base: number;
   min: number;
-  con: number; // constriction share, 0..1
-  lat: number; // ms from flash to 10% of the drop
-  ok: boolean; // enough clean frames
-  curve: number[]; // pupil size vs before-flash, every 100 ms from -500 to +2500 ms (NaN = no frame)
+  con: number;
+  lat: number;
+  ok: boolean;
+  curve: number[];
 }
 
 export const CURVE_T0 = -500, CURVE_STEP = 100, CURVE_N = 30;
 
-/** Light reflex from a run of frames; `flash` is the time the light came on. */
 export function reflex(fs: Frame[], flash: number): Reflex {
   const good = fs.filter((f) => Number.isFinite(f.ratio));
   const pre = good.filter((f) => f.t < flash && f.t > flash - 1000).map((f) => f.ratio);

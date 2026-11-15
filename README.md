@@ -19,7 +19,7 @@ every step has buttons, so the exam runs even if the voice service is unreachabl
 
 ```bash
 npm install
-cp .env.example .env.local   # fill GROQ_API_KEY
+cp .env.example .env.local   # only needed for the optional wearables sign-in
 npm run dev
 ```
 
@@ -27,9 +27,10 @@ Open http://localhost:3000.
 
 ## Stack
 
-Next.js (App Router) on Vercel, TypeScript, Tailwind. Voice: Groq Whisper (speech to text),
-Groq LLM (parse spoken answers), Groq Orpheus (text to speech). Storage: IndexedDB via `idb`.
-No wearables, no backend database.
+Next.js (App Router) on Vercel, TypeScript, Tailwind. Voice prompts are pre-recorded MP3s, so the exam
+needs no API key and no network. Sensors: MediaPipe Face Landmarker, camera PPG, device motion.
+Storage: IndexedDB via `idb`. No backend database. Optional wearables page reads a Fitbit Air through the
+Google Health API when the two Google OAuth variables are set.
 
 ## NASA data and resources used
 

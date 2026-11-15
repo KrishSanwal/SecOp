@@ -1,17 +1,15 @@
-// Balance from the motion sensor: phone held flat against the chest, eyes closed.
 
 export interface SwayResult {
-  rms: number; // m/s^2, sway without gravity
+  rms: number;
   peak: number;
-  out: boolean; // a jolt big enough to mean a step or a catch
-  dead: boolean; // sensor never reported
-  secs: number; // seconds held before `out`, or the full run
+  out: boolean;
+  dead: boolean;
+  secs: number;
   n: number;
 }
 
 const STEP = 3; // m/s^2 jolt = stepped out
 
-/** iOS needs a tap-triggered permission request; call this from a click handler. */
 export async function askMotion(): Promise<boolean> {
   if (typeof DeviceMotionEvent === "undefined") return false;
   const D = DeviceMotionEvent as unknown as { requestPermission?: () => Promise<string> };
@@ -38,7 +36,7 @@ export function measureSway(secs: number, tick?: (p: { t: number; rms: number })
         g = { x: g.x * 0.9 + (r.x ?? 0) * 0.1, y: g.y * 0.9 + (r.y ?? 0) * 0.1, z: g.z * 0.9 + (r.z ?? 0) * 0.1 }; // low-pass = gravity
         a = Math.hypot((r.x ?? 0) - g.x, (r.y ?? 0) - g.y, (r.z ?? 0) - g.z);
       }
-      if (t > 500) xs.push({ t, a }); // skip settling
+      if (t > 500) xs.push({ t, a });
       if (tick && xs.length % 20 === 0) tick({ t, rms: rms(xs) });
       if (a > STEP && t > 1500) finish(t, true);
       else if (t > secs * 1000) finish(t, false);

@@ -7,7 +7,6 @@ import { crewInsight } from "@/lib/insights";
 import { report } from "@/lib/scoring";
 import type { Crew, Exam } from "@/lib/types";
 
-/** Whole-crew view: who was last examined when, how many flags, and whether the crew is drifting together. */
 export default function CrewBoard() {
   const [d, setD] = useState<{ crew: Crew[]; exams: Exam[]; now: number } | null>(null);
   useEffect(() => {

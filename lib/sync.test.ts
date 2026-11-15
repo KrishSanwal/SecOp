@@ -16,7 +16,7 @@ describe("sync", () => {
     const r = new Receiver();
     expect(r.take("https://example.com")).toBe(false);
     for (const f of [...frames].reverse()) r.take(f);
-    r.take(frames[0]); // duplicates are fine
+    r.take(frames[0]);
     expect(r.done).toBe(true);
     expect(await r.bundle()).toEqual(b);
   });

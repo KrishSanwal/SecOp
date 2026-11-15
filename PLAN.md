@@ -44,7 +44,7 @@ Dark brown eyes are the known risk; verify with `/lab/pupil` before relying on i
   into `public/audio/*.mp3`. Play one with `say("hr_sit")` from `lib/say.ts`.
 - No voice input. Every answer is a button or number pad.
 - The exam needs no network. `public/sw.js` caches pages, scripts and audio on first load.
-- `/api/stt`, `/api/tts`, `/api/parse` exist but the exam never calls them.
+- No runtime API routes for voice. The exam makes zero network calls.
 
 ### Storage
 - IndexedDB (`idb` package). One store: `exams` keyed by id, with `subjectId`, `examinerId`,
@@ -73,7 +73,7 @@ Owner A = Shaurya. Owner B = teammate. Each task is a GitHub issue. Claim it by 
 | 1 | Repo, scaffold, deploy to Vercel, env vars | A | Vercel URL loads the home page |
 | 2 | `lib/scoring.ts`: station types, baseline, delta, flag rules, with unit tests | A | `npm test` green |
 | 3 | `lib/db.ts`: IndexedDB crew + exams store, export JSON | A | add/list/get work in browser |
-| 4 | Groq routes (now build-time only, for prompt audio) | A | done |
+| 4 | Voice prompt audio (Groq Orpheus, build-time script only; no runtime API routes) | A | done |
 | 5 | Crew screen `/` | B | pick subject + examiner, continue to exam |
 | 6 | Station flow `/exam`: 5 station screens, timers, buttons | B | full exam completes and saves |
 | 7 | Result card `/result?id=` with flags and action cards | B | shows deltas against seeded baseline |

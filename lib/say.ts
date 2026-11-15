@@ -10,7 +10,6 @@ function cut() {
   stop = null;
 }
 
-// Resolves true when the prompt finished (or could not play), false when another prompt or hush() cut it off.
 export function say(id: PromptId): Promise<boolean> {
   cut();
   const a = new Audio(`/audio/${id}.mp3`);

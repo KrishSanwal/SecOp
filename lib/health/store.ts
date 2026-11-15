@@ -6,15 +6,8 @@ export interface Saved extends Pull {
   src: Src;
 }
 
-export interface Note {
-  id: string;
-  text: string;
-  at: number;
-}
-
 interface Schema extends DBSchema {
   pulls: { key: string; value: Saved };
-  notes: { key: string; value: Note };
 }
 
 let conn: Promise<IDBPDatabase<Schema>> | null = null;
@@ -24,7 +17,6 @@ function db() {
   conn ??= openDB<Schema>("second-opinion-wearables", 1, {
     upgrade(d) {
       d.createObjectStore("pulls", { keyPath: "crew" });
-      d.createObjectStore("notes", { keyPath: "id" });
     },
   });
   return conn;
@@ -40,12 +32,4 @@ export async function getPull(crew: string) {
 
 export async function dropPull(crew: string) {
   await (await db()).delete("pulls", crew);
-}
-
-export async function saveNote(id: string, text: string) {
-  await (await db()).put("notes", { id, text, at: Date.now() });
-}
-
-export async function getNote(id: string) {
-  return (await db()).get("notes", id);
 }

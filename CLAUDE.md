@@ -2,8 +2,8 @@
 
 Read `PLAN.md` first. It is the design and the task list.
 
-- Voice stack is Groq only: Whisper for STT, a Groq LLM for parsing, Groq Orpheus for TTS. Never
-  edge-tts, never VAPI, never ElevenLabs, never Twilio.
+- No AI API keys in the app. Voice prompts are pre-recorded once with Groq Orpheus (`npm run audio`,
+  build-time only). Never edge-tts, never VAPI, never ElevenLabs, never Twilio, no runtime LLM calls.
 - Vercel: never set `runtime = 'edge'` on any route. Node runtime only.
 - Buttons are the primary input. Voice is a layer on top. Never make a step voice-only.
 - Storage is IndexedDB in the browser. No server database, no accounts.

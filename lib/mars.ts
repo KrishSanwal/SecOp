@@ -1,5 +1,3 @@
-// Earth-Mars distance and one-way light time from mean orbital elements (JPL approximations, J2000).
-// Good to a few percent, which is plenty for "how long until the surgeon can answer".
 
 const AU_KM = 149_597_870.7;
 const C_KM_S = 299_792.458;
@@ -35,7 +33,6 @@ function pos([e0, dt]: [El, El], T: number): [number, number, number] {
   ];
 }
 
-/** Earth-Mars distance in km and one-way light time in seconds, for a date. */
 export function mars(at = new Date()) {
   const T = (at.getTime() / 86_400_000 + 2440587.5 - 2451545) / 36525;
   const [ex, ey, ez] = pos(EARTH, T);
@@ -47,7 +44,6 @@ export function mars(at = new Date()) {
 
 export const mins = (s: number) => `${Math.round(s / 60)} min`;
 
-/** Short text summary of an exam, sized for a thin link. */
 export function packet(name: string, at: number, flags: string[], m: Record<string, number>): string {
   const d = new Date(at).toISOString().slice(0, 16).replace("T", " ");
   const n = (k: string, f = 0) => (Number.isFinite(m[k]) ? (f ? m[k].toFixed(f) : Math.round(m[k])) : "-");

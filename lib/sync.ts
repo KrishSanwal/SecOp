@@ -31,7 +31,6 @@ export class Receiver {
   total = 0;
   z = "0";
 
-  /** Feed one scanned string. Returns true if it was one of ours. */
   take(s: string): boolean {
     const m = /^SO1\|([01])\|(\d+)\|(\d+)\|([A-Za-z0-9+/=]+)$/.exec(s.trim());
     if (!m) return false;

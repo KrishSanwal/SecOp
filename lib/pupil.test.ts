@@ -3,7 +3,6 @@ import { reflex, segment, type Frame } from "./pupil";
 
 const S = 96;
 
-// Synthetic iris crop: iris fills the square, pupil disc of radius p (px), optional glint and lid shadow.
 function eye(p: number, iris: [number, number, number], pupil: [number, number, number], o: { glint?: boolean; lid?: boolean; noise?: number } = {}) {
   const d = new Uint8ClampedArray(S * S * 4);
   for (let y = 0; y < S; y++)
@@ -19,7 +18,7 @@ function eye(p: number, iris: [number, number, number], pupil: [number, number, 
   return d;
 }
 
-const BROWN: [number, number, number] = [72, 40, 28]; // dark brown iris
+const BROWN: [number, number, number] = [72, 40, 28];
 const BLACK: [number, number, number] = [22, 20, 20];
 
 describe("segment", () => {

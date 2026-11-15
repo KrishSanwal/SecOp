@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { listCrew } from "@/lib/db";
-import { digest, flags, latest, usual, verdict } from "@/lib/health/base";
+import { flags, latest, usual, verdict } from "@/lib/health/base";
 import { META } from "@/lib/health/meta";
-import { getNote, saveNote } from "@/lib/health/store";
 import type { Crew } from "@/lib/types";
 import { Back, Bottom, ghost, primary } from "../ui";
 import { Line } from "./line";
@@ -53,40 +52,8 @@ function Pick() {
 
 function One({ id, linked, gerr }: { id: string; linked: boolean; gerr: string }) {
   const w = useWear(id, linked);
-  const [note, setNote] = useState("");
-  const [nbusy, setNbusy] = useState(false);
-  const [nerr, setNerr] = useState("");
   const days = w.pull?.days;
   const fl = days ? flags(days) : [];
-  const key = days?.length ? `${id}:${days.at(-1)!.d}:${w.src}` : "";
-
-  useEffect(() => {
-    if (!key) return;
-    getNote(key).then((n) => setNote(n?.text ?? "")).catch(() => setNote(""));
-  }, [key]);
-
-  async function write() {
-    if (!days) return;
-    setNbusy(true);
-    setNerr("");
-    try {
-      const res = await fetch("/api/health/explain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ digest: digest(days), flags: fl.map((f) => f.msg) }),
-      }).catch(() => null);
-      if (!res) throw new Error("No connection. Notes need a network.");
-      const j = await res.json().catch(() => null);
-      if (!res.ok || typeof j?.text !== "string") throw new Error(j?.error ?? `Could not write the note (${res.status}).`);
-      setNote(j.text);
-      await saveNote(key, j.text);
-    } catch (e) {
-      setNerr(e instanceof Error ? e.message : "Could not write the note.");
-    } finally {
-      setNbusy(false);
-    }
-  }
-
   if (!w.pull || !days) return w.err ? <p role="alert" className="text-alert">{w.err}</p> : <p className="text-dim">Loading…</p>;
 
   const v = verdict(days, fl);
@@ -118,16 +85,6 @@ function One({ id, linked, gerr }: { id: string; linked: boolean; gerr: string }
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="flex flex-col gap-2" aria-labelledby="note">
-        <h2 id="note" className="text-xl font-semibold">Note for today</h2>
-        {note ? <p className="text-lg leading-relaxed">{note}</p> : <p className="text-dim">A short plain-language read of these numbers.</p>}
-        {nerr && <p role="alert" className="text-alert">{nerr}</p>}
-        <button type="button" onClick={write} disabled={nbusy} className={`${ghost} w-fit`}>
-          {nbusy ? "Writing…" : note ? "Write it again" : "Write a note"}
-        </button>
-        {note && <p className="text-sm text-dim">Written by AI from the numbers below. Not medical advice.</p>}
       </section>
 
       {GROUPS.map((g) => {

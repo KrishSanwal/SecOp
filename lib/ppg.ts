@@ -1,4 +1,3 @@
-// Fingertip PPG: finger over the rear camera, torch on, red channel pulses with each heartbeat.
 
 export interface PpgRun {
   stop: () => void;
@@ -6,9 +5,9 @@ export interface PpgRun {
 }
 
 export interface PpgResult {
-  bpm: number; // NaN if no clean signal
+  bpm: number;
   beats: number;
-  q: number; // 0..1 share of frames with a finger on the lens
+  q: number;
   trace: { t: number; v: number }[];
 }
 
@@ -26,7 +25,6 @@ export async function openRear() {
   return { s, torch };
 }
 
-/** Sample the camera for `secs` and return heart rate. `tick` reports live progress. */
 export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: number; on: boolean; hard: boolean; bpm: number; wave: number[]; beat: boolean }) => void): PpgRun {
   const c = document.createElement("canvas");
   c.width = c.height = 40;
@@ -72,7 +70,6 @@ export function analyse(tr: { t: number; v: number; on: boolean }[]): PpgResult 
   const xs = tr.filter((x) => x.on);
   if (xs.length < 45) return { bpm: NaN, beats: 0, q, trace: [] };
 
-  // Detrend with a ~1 s moving average, then smooth with ~0.15 s.
   const ma = (a: number[], w: number) => a.map((_, i) => { const s = a.slice(Math.max(0, i - w), i + w + 1); return s.reduce((p, q) => p + q, 0) / s.length; });
   const fps = xs.length / ((xs.at(-1)!.t - xs[0].t) / 1000);
   const raw = xs.map((x) => x.v);
@@ -80,7 +77,7 @@ export function analyse(tr: { t: number; v: number; on: boolean }[]): PpgResult 
   const sig = ma(raw.map((v, i) => base[i] - v), Math.max(1, Math.round(fps * 0.07))); // blood in = darker, so invert
 
   const sd = Math.sqrt(sig.reduce((a, v) => a + v * v, 0) / sig.length);
-  const gap = (60 / 200) * 1000; // max 200 bpm
+  const gap = (60 / 200) * 1000;
   const peaks: number[] = [];
   for (let i = 1; i < sig.length - 1; i++) {
     if (sig[i] > sd * 0.5 && sig[i] >= sig[i - 1] && sig[i] > sig[i + 1]) {
@@ -104,7 +101,6 @@ export async function closeRear(s: MediaStream | null) {
   s.getTracks().forEach((t) => t.stop());
 }
 
-/** Is a lit fingertip covering the lens, and is it pressed so hard the image saturates? */
 export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): { on: boolean; hard: boolean } {
   if (v.readyState < 2) return { on: false, hard: false };
   c.width = c.height = 20;
@@ -120,7 +116,6 @@ export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): { on: boolean
   return { on, hard: on && r > 248 && g < 8 };
 }
 
-/** Pulse the phone at `bpm` for `secs`. No-op where vibration is unsupported. */
 export function thump(bpm: number, secs = 5) {
   if (!Number.isFinite(bpm) || !navigator.vibrate) return;
   const gap = Math.round(60000 / bpm);

@@ -12,7 +12,7 @@ The rest are "roadmap" answers for the Q&A ("what would you do with more time?")
 
 ## Strong roadmap answers
 
-5. **Voice-only exam.** Examiner never touches the screen: the app speaks each step and listens for "done". Our Groq STT route already exists; offline needs an on-device model (Whisper tiny in WebGPU).
+5. **Voice-only exam.** Examiner never touches the screen: the app speaks each step and listens for "done". Needs on-device speech recognition to stay offline; offline needs an on-device model (Whisper tiny in WebGPU).
 6. **Crew-wide view.** Four crew, everyone examined daily, a matrix of who is drifting. Catches a cabin cause (CO2, a bad batch of food) when everyone drifts together.
 7. **Speech biomarkers.** Record the "anything bothering you?" answer; track speaking rate and pause length vs baseline. Fatigue and low mood change speech before people report them.
 8. **Eye-movement test (saccades).** Front camera tracks the iris while a dot jumps on screen. Latency of eye movements is a known fatigue and concussion marker. Reuses the MediaPipe iris model we already ship.
