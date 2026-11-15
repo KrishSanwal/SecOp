@@ -8,17 +8,27 @@ Rules from the submission guide: 30 s max, no NASA logos, nothing fabricated. Fi
 - Lighting: a window or a desk lamp on the face, no light behind. Dark eyes need the flash, which the app does.
 - Record every clip 2 to 3 times. Cut in CapCut or the phone's editor. Captions on, no music louder than the voice.
 
-## Shot list and voice-over
+## Script (YC style: what it is in sentence one, one number, show the magic, why it matters)
 
-| Time | Shot | Voice-over (read at normal pace, 70 words total) |
+| Time | Shot | Voice-over (82 words, normal pace) |
 |---|---|---|
-| 0-4 s | Black. White text: "Mars. A message home takes 11 minutes. There is no doctor." | "On a long mission there is no doctor and the signal is minutes away." |
-| 4-8 s | Two people at a table, one holds the phone to the other's eye. Flash fires. Screen shows the pupil curve drawing. | "So your crewmate examines you. The camera times your pupil." |
-| 8-13 s | Close on fingertip over the back camera. Pulse wave scrolls, bpm settles. Phone visibly buzzes in the hand. | "The camera reads your pulse. You feel it in your hand." |
-| 13-17 s | Phone flat on the chest, eyes closed. Beeps. Verdict "Looks normal". | "The motion sensor measures your balance." |
-| 17-24 s | Screen record: result card. Three flags, scroll to "Do now", then the Mars delay line and "Queue for the next comms window". | "Everything is compared with your own baseline. Every flag maps to NASA's medical checklist. Then it queues a 150-character note for the surgeon." |
-| 24-28 s | Crew board on the home screen, then the QR code looping, second phone receiving "2 of 3". | "Records move phone to phone with no network." |
-| 28-30 s | Title card: "Second Opinion" and under it "Works with no internet. Team Vortexx." Zoom on the airplane icon in the status bar. | "Second Opinion." |
+| 0-4 s | Shaurya to camera, phone in hand, Krish beside. | "We're Vortexx. Second Opinion is a five-minute health check two astronauts give each other with the phone in their pocket. No internet." |
+| 4-8 s | Black card: "Mars: 11 minutes each way. No doctor." | "A message from Mars takes eleven minutes. There is no doctor on board. And NASA's own research says astronauts don't report symptoms." |
+| 8-11 s | Krish holds the phone to Shaurya's eye. Flash. Pupil curve draws. | "So your crewmate checks you. The camera times your pupil." |
+| 11-15 s | Fingertip on the camera. Pulse wave scrolls, bpm lands, phone buzzes. | "The camera reads your pulse. You feel it in your hand." |
+| 15-18 s | Phone on the chest, eyes closed, beeps, "Looks normal". | "The motion sensor measures your balance." |
+| 18-25 s | Screen record: result card, three flags, "Do now", Mars countdown. | "Everything is scored against your own normal. When something slips, it says what NASA's medical checklist says to do, and queues a 150-character note for the flight surgeon." |
+| 25-28 s | QR loop, second phone "2 of 3". Crew board. | "Records move phone to phone. Still no network." |
+| 28-30 s | Both to camera. Airplane icon on screen. | "We built it in two days. It works in airplane mode. Second Opinion." |
+
+Delivery: look at the lens, not the screen. Sentences end down, not up. Cut the clip the moment the sentence ends. If it runs over 30 s, drop the "Records move phone to phone" line first.
+
+## Live pitch, 2 minutes, same structure
+1. **What it is (10 s).** "Second Opinion is a five-minute health check two astronauts give each other with a phone. It works with no internet, and it compares you with your own normal, not a textbook."
+2. **The problem, with numbers (20 s).** "A Mars message takes 11 minutes each way. There is no doctor. NASA's behavioral health evidence report says crews under-report symptoms, and the person worst placed to notice slow decline is you. Your crewmate sees it first."
+3. **Show it (60 s).** Live, phone mirrored, airplane mode on: pupil reflex with the flash, pulse off the camera with the buzz, balance on the chest. Then Asha's result card: "Right pupil slow, heart rate up 36 on standing, reactions 25% slower than her normal. Here is what the ISS checklist says to do now, and here is the note queued for the surgeon, 11 minutes out."
+4. **Why it holds up (20 s).** "Limits come from NASA's ISS Medical Checklist and NASA-STD-3001. Every threshold is in one file a flight surgeon can tune. 65 automated tests. No cloud, no account, no wearable required. Nothing leaves the phone unless the crew sends it."
+5. **Close (10 s).** "Next is an analog-mission pilot and a red filter that makes phone pupillometry work on dark eyes. Same app works in Antarctica and in a village clinic. We're Vortexx. Second Opinion."
 
 ## Phone-screen clips that always work
 If the live sensors misbehave on camera, these are the safe takes and they are still honest:
