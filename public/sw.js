@@ -1,5 +1,5 @@
-const V = "so-v5";
-const PAGES = ["/", "/exam", "/result", "/trend"];
+const V = "so-v6";
+const PAGES = ["/", "/exam", "/result", "/trend", "/sync", "/lab", "/lab/pupil", "/lab/hr", "/lab/sway"];
 const MP = ["/mp/vision_wasm_internal.js", "/mp/vision_wasm_internal.wasm", "/models/face_landmarker.task"];
 
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);

@@ -27,7 +27,7 @@ export async function openRear() {
 }
 
 /** Sample the camera for `secs` and return heart rate. `tick` reports live progress. */
-export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: number; on: boolean; hard: boolean; bpm: number }) => void): PpgRun {
+export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: number; on: boolean; hard: boolean; bpm: number; wave: number[]; beat: boolean }) => void): PpgRun {
   const c = document.createElement("canvas");
   c.width = c.height = 40;
   const ctx = c.getContext("2d", { willReadFrequently: true })!;
@@ -51,7 +51,13 @@ export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: num
         r /= d.length / 4; g /= d.length / 4;
         const on = r > 100 && g < r * 0.6; // lens covered by a lit fingertip
         tr.push({ t, v: r, on });
-        if (tick && tr.length % 15 === 0) tick({ t, on, hard: on && r > 248 && g < 8, bpm: analyse(tr.slice(-180)).bpm });
+        if (tick && tr.length % 3 === 0) {
+          const a = analyse(tr.slice(-150));
+          const w = a.trace.slice(-90).map((x) => x.v);
+          const n = w.length;
+          const beat = n > 4 && w[n - 3] > w[n - 4] && w[n - 3] >= w[n - 2] && w[n - 3] > 0.5 * Math.max(...w.map(Math.abs));
+          tick({ t, on, hard: on && r > 248 && g < 8, bpm: tr.length % 15 === 0 ? analyse(tr.slice(-180)).bpm : NaN, wave: w, beat });
+        }
       }
       requestAnimationFrame(step);
     };
@@ -64,7 +70,7 @@ export function measureHr(v: HTMLVideoElement, secs: number, tick?: (p: { t: num
 export function analyse(tr: { t: number; v: number; on: boolean }[]): PpgResult {
   const q = tr.length ? tr.filter((x) => x.on).length / tr.length : 0;
   const xs = tr.filter((x) => x.on);
-  if (xs.length < 60) return { bpm: NaN, beats: 0, q, trace: [] };
+  if (xs.length < 45) return { bpm: NaN, beats: 0, q, trace: [] };
 
   // Detrend with a ~1 s moving average, then smooth with ~0.15 s.
   const ma = (a: number[], w: number) => a.map((_, i) => { const s = a.slice(Math.max(0, i - w), i + w + 1); return s.reduce((p, q) => p + q, 0) / s.length; });
@@ -112,4 +118,12 @@ export function finger(v: HTMLVideoElement, c: HTMLCanvasElement): { on: boolean
   const on = r > 100 && g < r * 0.6;
   // Red pinned near 255 with almost no green = blood squeezed out or sensor clipped: no pulse visible.
   return { on, hard: on && r > 248 && g < 8 };
+}
+
+/** Pulse the phone at `bpm` for `secs`. No-op where vibration is unsupported. */
+export function thump(bpm: number, secs = 5) {
+  if (!Number.isFinite(bpm) || !navigator.vibrate) return;
+  const gap = Math.round(60000 / bpm);
+  const n = Math.max(1, Math.round((secs * 1000) / gap));
+  navigator.vibrate(Array.from({ length: n }, () => [60, gap - 60]).flat());
 }

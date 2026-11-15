@@ -77,3 +77,17 @@ No. It flags change from your own normal and tells you what NASA's checklist say
 - Works fully offline after one visit
 - 0 wearables, 0 servers during the exam
 - Mars delay: 4 to 24 minutes one way
+
+## 5. Added on Sunday (know these too)
+
+**Live pulse wave.** During the heart-rate reading the detrended red-channel signal (lib/ppg.ts, `tick.wave`) is drawn on a canvas; a dot flashes on each detected peak. When the reading ends the phone vibrates at the measured rate for 5 s (`thump`).
+
+**Pupil reflex graph.** The camera pupil test keeps a 30-point curve (pupil size vs size before the flash, every 100 ms from -0.5 s to +2.5 s). It is drawn on the station verdict with the person's last curve in grey, and saved with the exam (`pupils.curve`).
+
+**Mars delay.** `lib/mars.ts` computes the Earth-Mars distance for today from mean orbital elements (JPL J2000 approximations, Kepler solved by Newton's method), then light time = distance / c. On 15 Nov 2026 that is about 197 million km, 11 min one way. The result card packs the exam into a <160-character text (`packet`) and, when queued, counts down to the earliest possible reply (2 x one way). Tests check the range and the Feb 2027 opposition minimum.
+
+**Phone to phone, no network.** `/sync`. Records are JSON, deflate-compressed, base64, split into 500-character frames `SO1|z|i|n|data`, shown as a looping QR (qrcode lib, 450 ms per frame). The receiving phone scans with the browser's BarcodeDetector (jsQR fallback), collects frames in any order, decompresses, and upserts crew and exams by id. Nine exams fit in 3 frames.
+
+**Crew board.** Home page lists everyone with last exam and flag count. `crewInsight` (lib/insights.ts): if at least two people and at least half the crew got worse on the same measurement at their latest exam, it says to check the cabin (CO2, sleep schedule, food, noise) before the people.
+
+**In space / on a surface.** Asked before each exam; in space the two gravity stations are skipped and never enter the baseline.

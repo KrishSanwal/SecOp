@@ -175,7 +175,10 @@ export interface Reflex {
   con: number; // constriction share, 0..1
   lat: number; // ms from flash to 10% of the drop
   ok: boolean; // enough clean frames
+  curve: number[]; // pupil size vs before-flash, every 100 ms from -500 to +2500 ms (NaN = no frame)
 }
+
+export const CURVE_T0 = -500, CURVE_STEP = 100, CURVE_N = 30;
 
 /** Light reflex from a run of frames; `flash` is the time the light came on. */
 export function reflex(fs: Frame[], flash: number): Reflex {
@@ -188,7 +191,12 @@ export function reflex(fs: Frame[], flash: number): Reflex {
   const min = Math.min(...smooth.map((s) => s.r));
   const drop = base - min;
   const hit = smooth.find((s) => base - s.r >= drop * 0.1);
-  return { base, min, con: base > 0 ? drop / base : NaN, lat: hit ? hit.t - flash : NaN, ok };
+  const curve = Array.from({ length: CURVE_N }, (_, i) => {
+    const a = flash + CURVE_T0 + i * CURVE_STEP;
+    const v = med(good.filter((f) => f.t >= a && f.t < a + CURVE_STEP).map((f) => f.ratio));
+    return base > 0 ? v / base : NaN;
+  });
+  return { base, min, con: base > 0 ? drop / base : NaN, lat: hit ? hit.t - flash : NaN, ok, curve };
 }
 
 function med(xs: number[]) {

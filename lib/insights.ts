@@ -71,3 +71,26 @@ export function insights(hist: Exam[], max = 3): string[] {
 
   return out.sort((a, b) => b.w - a.w).slice(0, max).map((x) => x.t);
 }
+
+export type CrewHist = { name: string; hist: Exam[] };
+
+/** One sentence when most of the crew drifted the same way at their latest exam: the cause may be the cabin, not the person. */
+export function crewInsight(crew: CrewHist[], max = 2): string[] {
+  const out: { n: number; t: string }[] = [];
+  const able = crew.filter((c) => c.hist.length >= 3);
+  if (able.length < 2) return [];
+  for (const m of META) {
+    const hit: string[] = [];
+    for (const c of able) {
+      const p = series(c.hist)[m.k];
+      if (p.length < 3) continue;
+      const base = avg(p.slice(0, 2).map((x) => x.v));
+      const now = p.at(-1)!.v;
+      if ((now - base) * m.worse > Math.abs(base) * 0.2) hit.push(c.name);
+    }
+    if (hit.length >= 2 && hit.length >= Math.ceil(able.length / 2)) {
+      out.push({ n: hit.length, t: `${m.t} got worse for ${hit.join(" and ")} at the same time. When most of the crew drifts together, check the cabin first: CO2, the sleep schedule, food, noise.` });
+    }
+  }
+  return out.sort((a, b) => b.n - a.n).slice(0, max).map((x) => x.t);
+}

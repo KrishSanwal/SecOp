@@ -12,6 +12,8 @@ import { askMotion } from "@/lib/sway";
 import type { Crew, Pupil, Results, Sway } from "@/lib/types";
 import { Prep, Verdict, type Tone } from "./lab";
 import { CamHr, CamPupil, MotionBal, type EyeRead } from "./sense";
+import { ReflexGraph } from "./reflex";
+import { examsOf } from "@/lib/db";
 import { Back, Bottom, btn, Choice, Cue, ghost, primary, Stepper, Tag, Talk, Timed, useCues } from "./ui";
 
 type Key = "pupils" | "hr" | "bal" | "mood" | "rx";
@@ -275,6 +277,22 @@ function Pupils({ onDone, next }: Step) {
   const [l, setL] = useState<Pupil | null>(null);
   const [r, setR] = useState<Pupil | null>(null);
   const [cam, setCam] = useState<{ r: EyeRead; l: EyeRead } | null>(null);
+  const subj = useSearchParams().get("subj") ?? "";
+  const [prev, setPrev] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!subj) return;
+    examsOf(subj)
+      .then((xs) => setPrev([...xs].reverse().find((e) => e.res.pupils.curve?.some(Number.isFinite))?.res.pupils.curve ?? null))
+      .catch(() => {});
+  }, [subj]);
+  const meanCurve = (c: { r: EyeRead; l: EyeRead }) => {
+    const ok = [c.r, c.l].filter((e) => e.ok && e.curve?.length);
+    if (!ok.length) return undefined;
+    return ok[0].curve.map((_, i) => {
+      const v = ok.map((e) => e.curve[i]).filter(Number.isFinite);
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
+    });
+  };
   const talk = useContext(Talk);
   const opts: [Pupil, string, string][] = [
     ["brisk", "Brisk", "shrinks fast"],
@@ -348,7 +366,9 @@ function Pupils({ onDone, next }: Step) {
               else go("left", "pupil_left");
             }}
             note={NOTE}
-          />
+          >
+            {cam && meanCurve(cam) && <ReflexGraph now={meanCurve(cam)!} prev={prev} />}
+          </Verdict>
         )}
       </section>
       {step === "left" && (
@@ -376,7 +396,7 @@ function Pupils({ onDone, next }: Step) {
         <Done
           next={next}
           onClick={() =>
-            onDone({ pupils: cam ? { l, r, lat: avg("lat"), con: avg("con"), asym: cam.r.ok && cam.l.ok ? Math.abs(cam.r.con - cam.l.con) : undefined } : { l, r } })
+            onDone({ pupils: cam ? { l, r, lat: avg("lat"), con: avg("con"), asym: cam.r.ok && cam.l.ok ? Math.abs(cam.r.con - cam.l.con) : undefined, curve: meanCurve(cam) } : { l, r } })
           }
         />
       )}

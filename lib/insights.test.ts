@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { insights, series } from "./insights";
+import { crewInsight, insights, series } from "./insights";
 import type { Exam, Results } from "./types";
 
 const base: Results = {
@@ -30,5 +30,16 @@ describe("insights", () => {
   it("series skips unmeasured values", () => {
     expect(series([ex(1, 300), ex(2, 320)]).brms).toEqual([]);
     expect(series([ex(1, 300), ex(2, 320)]).rx.length).toBe(2);
+  });
+});
+
+describe("crewInsight", () => {
+  const mk = (subj: string, rxs: number[]): Exam[] => rxs.map((rx, i) => ({ id: `${subj}${i}`, subj, exr: "x", at: (i + 1) * 864e5, res: { ...base, rx: { ms: Array(10).fill(rx) } } }));
+  it("flags a shared drift", () => {
+    const t = crewInsight([{ name: "Asha", hist: mk("a", [300, 300, 300, 380]) }, { name: "Ravi", hist: mk("r", [310, 310, 310, 400]) }]);
+    expect(t[0]).toMatch(/Reaction got worse for Asha and Ravi at the same time/);
+  });
+  it("stays quiet when only one person drifts", () => {
+    expect(crewInsight([{ name: "Asha", hist: mk("a", [300, 300, 300, 380]) }, { name: "Ravi", hist: mk("r", [310, 310, 310, 312]) }])).toEqual([]);
   });
 });

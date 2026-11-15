@@ -75,7 +75,10 @@ export default function Trend() {
         })}
       </ul>
 
-      <Link href="/" className={ghost}>Back to crew</Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href={{ pathname: "/sync", query: { crew: id ?? "" } }} className={ghost}>Share to another phone</Link>
+        <Link href="/" className={ghost}>Back to crew</Link>
+      </div>
     </>
   );
 }

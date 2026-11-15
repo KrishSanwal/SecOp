@@ -78,6 +78,7 @@ export function Verdict({
   again,
   againLabel = "Test again",
   note = "A rough guide for a prototype, not a diagnosis. In the real exam, results are compared with your own past sessions.",
+  children,
 }: {
   tone: Tone;
   title: string;
@@ -86,13 +87,15 @@ export function Verdict({
   again: () => void;
   againLabel?: string;
   note?: string;
+  children?: ReactNode;
 }) {
   const c = { ok: "border-accent", check: "border-alert", fail: "border-edge" }[tone];
   const h = { ok: "text-accent", check: "text-alert", fail: "text-foreground" }[tone];
   return (
-    <section className={`flex flex-col gap-3 rounded-[3px] border-l-4 bg-panel p-4 ${c}`}>
-      <p className={`font-display text-2xl font-bold ${h}`}>{title}</p>
+    <section className={`flex flex-col gap-3 rounded-xl border bg-panel p-4 ${c}`}>
+      <p className={`text-2xl font-bold ${h}`}>{title}</p>
       <p className="text-lg">{body}</p>
+      {children}
       {nums && (
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 border-y border-rule py-2">
           {nums.map(([k, v]) => (

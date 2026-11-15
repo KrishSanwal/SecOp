@@ -2,7 +2,7 @@ export type Pupil = "brisk" | "sluggish" | "unequal";
 export type Sway = "none" | "mild" | "marked" | "out";
 
 export interface Results {
-  pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number }; // camera: ms, share, |L-R| con
+  pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number; curve?: number[] }; // camera: ms, share, |L-R| con, size vs before flash per 100 ms
   hr: { sit: number; stand: number; cam?: boolean }; // beats per 15 s (camera writes bpm / 4)
   bal: { sway: Sway; secs: number; rms?: number }; // rms: m/s^2 from motion sensor
   mood: { sleep: number; score: 1 | 2 | 3 | 4 | 5; note: string };

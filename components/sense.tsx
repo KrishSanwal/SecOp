@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { closeRear, finger, measureHr, openRear, type PpgRun } from "@/lib/ppg";
+import { closeRear, finger, measureHr, openRear, thump, type PpgRun } from "@/lib/ppg";
 import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame } from "@/lib/pupil";
 import { measureSway, type SwayResult } from "@/lib/sway";
 import { beep, Status, Verdict, wait } from "./lab";
@@ -9,6 +9,25 @@ import { Big, ghost } from "./ui";
 
 const HR_SECS = 20;
 const BAL_SECS = 30;
+
+function draw(c: HTMLCanvasElement | null, w: number[]) {
+  if (!c || w.length < 2) return;
+  const g = c.getContext("2d")!;
+  const W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  const m = Math.max(1e-6, ...w.map(Math.abs));
+  g.strokeStyle = getComputedStyle(c).getPropertyValue("--accent") || "#e0b45a";
+  g.lineWidth = 3;
+  g.lineJoin = "round";
+  g.beginPath();
+  w.forEach((v, i) => {
+    const x = (i / (w.length - 1)) * W;
+    const y = H / 2 - (v / m) * (H * 0.42);
+    if (i) g.lineTo(x, y);
+    else g.moveTo(x, y);
+  });
+  g.stroke();
+}
 
 function Fail({ why, again, other, otherLabel }: { why: string; again: () => void; other: () => void; otherLabel: string }) {
   return (
@@ -34,6 +53,9 @@ export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHan
   const [count, setCount] = useState<number | null>(null);
   const [left, setLeft] = useState(HR_SECS);
   const [why, setWhy] = useState("");
+  const [bpm, setBpm] = useState(NaN);
+  const wave = useRef<HTMLCanvasElement>(null);
+  const [beat, setBeat] = useState(false);
   useEffect(() => {
     read.current = onRead;
   });
@@ -78,12 +100,19 @@ export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHan
           setLeft(Math.max(0, Math.ceil(HR_SECS - p.t / 1000)));
           setOn(p.on);
           setHard(p.hard);
+          if (Number.isFinite(p.bpm)) setBpm(p.bpm);
+          if (p.beat) {
+            setBeat(true);
+            setTimeout(() => setBeat(false), 120);
+          }
+          draw(wave.current, p.wave);
         });
         const r = await k.run.done;
         if (!k.live) return;
         beep(990, 140);
         await closeRear(k.s);
         k.s = null;
+        if (Number.isFinite(r.bpm)) thump(r.bpm, 5);
         if (!Number.isFinite(r.bpm) || r.q < 0.6) {
           setWhy(r.q < 0.6 ? "The fingertip was off the camera for much of the reading. Rest the hand on a table and try again." : "The pulse signal was too noisy. Press more lightly, keep completely still, and try again.");
           setPh("fail");
@@ -132,10 +161,20 @@ export function CamHr({ onRead, onHand }: { onRead: (bpm: number) => void; onHan
         </>
       )}
       {ph === "run" && (
-        <div role="status" className="flex flex-col gap-2">
-          <p className="text-dim">Reading the pulse</p>
-          <Big>{left}s</Big>
-          <p className={on && !hard ? "text-dim" : "text-alert"}>{!on ? "Finger moved: cover the camera again" : hard ? "Press more lightly" : "Keep still"}</p>
+        <div role="status" className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <p className="text-dim">Reading the pulse</p>
+            <p className="text-dim tabular-nums">{left}s</p>
+          </div>
+          <div className="relative overflow-hidden rounded-xl bg-panel">
+            <canvas ref={wave} width={640} height={160} className="h-28 w-full" aria-hidden />
+            <span className={`absolute top-3 right-3 size-3 rounded-full bg-alert transition-transform duration-100 ${beat ? "scale-150" : "scale-75 opacity-60"}`} aria-hidden />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <Big>{Number.isFinite(bpm) ? Math.round(bpm) : "–"}</Big>
+            <span className="text-dim">bpm, settling</span>
+          </div>
+          <p className={on && !hard ? "text-dim" : "text-alert"}>{!on ? "Finger moved: cover the camera again" : hard ? "Press more lightly" : "Keep still. The phone will pulse with your heartbeat when done."}</p>
         </div>
       )}
       {ph === "fail" && <Fail why={why} again={again} other={onHand} otherLabel="Count the pulse by hand" />}
@@ -233,7 +272,7 @@ export function MotionBal({ onRead, onHand }: { onRead: (r: SwayResult) => void;
   );
 }
 
-export type EyeRead = { con: number; lat: number; ok: boolean };
+export type EyeRead = { con: number; lat: number; ok: boolean; curve: number[] };
 
 // Back camera held by the examiner, flash as the light (front camera + screen flash if no torch).
 // Measures the right eye then the left; resolves both reflexes.
@@ -325,7 +364,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
           if (!useFront) await torch(false);
           beep(990, 120);
           const rf = reflex(rec, at);
-          out[e] = { con: rf.con, lat: rf.lat, ok: rf.ok && Number.isFinite(rf.con) && rf.con >= 0.05 };
+          out[e] = { con: rf.con, lat: rf.lat, ok: rf.ok && Number.isFinite(rf.con) && rf.con >= 0.05, curve: rf.curve };
           setPh("align");
         }
         await closeRear(k.s);

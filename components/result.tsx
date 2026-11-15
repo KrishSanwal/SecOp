@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ACTIONS, RULE } from "@/lib/actions";
 import { examsOf, exportJson, getCrew, getExam } from "@/lib/db";
 import { insights } from "@/lib/insights";
+import { Surgeon } from "./surgeon";
 import { say } from "@/lib/say";
 import { LIMITS, report } from "@/lib/scoring";
 import type { Crew, Flag, Report, Results, Sway } from "@/lib/types";
@@ -167,6 +168,8 @@ export default function Result() {
           />
         </ul>
       </section>
+
+      <Surgeon r={r} name={sn} space={!!r.exam.res.space} />
 
       <div className="grid grid-cols-2 gap-2">
         <Link href={{ pathname: "/trend", query: { crew: r.exam.subj } }} className={ghost}>
