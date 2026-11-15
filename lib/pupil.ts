@@ -147,10 +147,14 @@ export interface Check {
   fix: string;
 }
 
+export const SHAKE = 0.15;
+
 export function ready(fs: Frame[]): Check[] {
   const f = fs.at(-1);
   const recent = fs.slice(-15);
-  const move = recent.length > 5 ? Math.max(...recent.map((x) => Math.hypot(x.cx - recent[0].cx, x.cy - recent[0].cy))) / (f?.irisPx || 1) : 9;
+  // the crop follows the iris every frame, so slow drift is fine; only fast shake blurs it
+  const hops = recent.slice(1).flatMap((x, i) => (x.face && recent[i].face ? [Math.hypot(x.cx - recent[i].cx, x.cy - recent[i].cy) / (x.irisPx || 1)] : []));
+  const shake = hops.length >= 4 ? med(hops) : 9;
   if (!f?.face) return [{ id: "face", ok: false, fix: "Point the camera at the face" }];
   return [
     { id: "face", ok: true, fix: "" },
@@ -158,7 +162,7 @@ export function ready(fs: Frame[]): Check[] {
     { id: "far", ok: !!f && f.irisPx <= 140, fix: "Move the phone a little further away" },
     { id: "open", ok: !!f && f.open > 0.55, fix: "Open the eye wide" },
     { id: "light", ok: !!f && f.lum > 35, fix: "Turn the room lights on" },
-    { id: "still", ok: move < 0.35, fix: "Hold the phone still" },
+    { id: "still", ok: shake < SHAKE, fix: "Steady the phone: rest a little finger on the subject's cheek" },
     { id: "sep", ok: med(recent.map((x) => x.sep)) > 0.12, fix: "Pupil not visible yet: add more light from the front, or switch to the back camera with flash" },
   ];
 }

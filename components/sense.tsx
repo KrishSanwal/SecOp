@@ -332,18 +332,22 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
             grab();
             const cs = ready(fs);
             setChecks(cs);
-            ok = cs.every((c) => c.ok) ? ok + 1 : 0;
-            if (ok < 25) continue;
-            let held = true;
+            ok = cs.every((c) => c.ok) ? ok + 1 : Math.max(0, ok - 2);
+            if (ok < 12) continue;
+            let good = 0, all = 0;
             for (const n of [3, 2, 1]) {
               setCount(n);
               beep(660, 80);
               const t = performance.now();
-              while (performance.now() - t < 700) { await wait(33); grab(); }
-              if (!ready(fs).every((c) => c.ok)) held = false;
+              while (performance.now() - t < 700) {
+                await wait(33);
+                grab();
+                all++;
+                if (ready(fs).every((c) => c.ok)) good++;
+              }
             }
             setCount(null);
-            if (held) break;
+            if (good >= all * 0.6 && ready(fs)[0].ok) break;
             ok = 0;
           }
           if (!k.live) return;
@@ -393,7 +397,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       {(ph === "align" || ph === "run") && (
         <p className="text-lg">
           {front ? "Hold the front camera 10 to 15 cm from the subject's " : "Hold the back camera 15 to 20 cm from the subject's "}
-          <b>{name} eye</b>. Subject looks far away, eye wide open.
+          <b>{name} eye</b>. Subject looks far away, eye wide open. Steady trick: hold it with both hands and rest a little finger on the subject&apos;s cheekbone, so the phone moves with their head.
         </p>
       )}
       <video ref={vid} playsInline muted autoPlay className={`aspect-[4/3] w-full rounded-xl bg-black object-cover ${front ? "-scale-x-100" : ""} ${ph === "align" || ph === "run" ? "" : "hidden"}`} />

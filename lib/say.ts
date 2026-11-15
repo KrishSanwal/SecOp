@@ -11,9 +11,9 @@ function cut() {
   stop = null;
 }
 
-export function say(id: PromptId): Promise<boolean> {
+export function say(id: PromptId, tap = false): Promise<boolean> {
   cut();
-  if (!voiceOn()) return Promise.resolve(true);
+  if (!tap && !voiceOn()) return Promise.resolve(true);
   const a = new Audio(`/audio/${id}.mp3`);
   cur = a;
   return new Promise((done) => {

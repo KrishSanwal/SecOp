@@ -11,7 +11,7 @@ export const btn =
 export const ghost = `${btn} border border-edge text-ink hover:border-accent hover:text-accent active:bg-rule`;
 export const primary = `${btn} cut glow min-h-14 w-full bg-accent text-center font-semibold text-lg text-on-accent hover:brightness-105 active:brightness-95 disabled:bg-rule disabled:text-dim disabled:shadow-none`;
 
-export const Talk = createContext<(id: PromptId) => Promise<boolean>>(say);
+export const Talk = createContext<(id: PromptId, tap?: boolean) => Promise<boolean>>(say);
 
 export function Tag({ children, tone = "dim" }: { children: ReactNode; tone?: "dim" | "accent" | "alert" }) {
   const c = { dim: "text-dim", accent: "text-dim", alert: "text-alert" }[tone];
@@ -42,7 +42,7 @@ export function Cue({ id, big }: { id: PromptId; big?: boolean }) {
   return (
     <div className="flex items-start gap-3">
       <p className={big ? "font-display text-2xl leading-snug font-semibold text-chalk" : "text-lg leading-relaxed"}>{PROMPTS[id]}</p>
-      <button type="button" onClick={() => talk(id)} aria-label="Play this prompt again" className={`${ghost} size-12 shrink-0 px-0`}>
+      <button type="button" onClick={() => talk(id, true)} aria-label="Play this prompt again" className={`${ghost} size-12 shrink-0 px-0`}>
         <SpeakerHigh size={20} weight="bold" aria-hidden />
       </button>
     </div>

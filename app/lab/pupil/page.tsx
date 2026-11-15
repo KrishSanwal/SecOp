@@ -109,8 +109,8 @@ export default function PupilLab() {
           if (S.ph === "align") {
             const cs = ready(S.fs);
             setChecks(cs);
-            S.okRun = cs.every((c) => c.ok) ? S.okRun + 1 : 0;
-            if (S.okRun > 25 && !S.busy) run();
+            S.okRun = cs.every((c) => c.ok) ? S.okRun + 1 : Math.max(0, S.okRun - 2);
+            if (S.okRun > 12 && !S.busy) run();
           }
         }
         S.raf = requestAnimationFrame(loop);

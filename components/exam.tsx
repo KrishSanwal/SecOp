@@ -77,7 +77,7 @@ export default function Exam() {
     };
   }, []);
 
-  const talk = useCallback((id: PromptId) => say(id), []);
+  const talk = useCallback((id: PromptId, tap?: boolean) => say(id, tap), []);
 
   function pick(w: "surface" | "space") {
     setWhere(w);

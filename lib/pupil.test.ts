@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reflex, segment, type Frame } from "./pupil";
+import { ready, reflex, segment, type Frame } from "./pupil";
 
 const S = 96;
 
@@ -59,5 +59,24 @@ describe("reflex", () => {
     expect(r.con).toBeGreaterThan(0.25);
     expect(r.lat).toBeGreaterThan(200);
     expect(r.lat).toBeLessThan(400);
+  });
+});
+
+describe("ready: steadiness", () => {
+  const at = (i: number, cx: number, cy: number): Frame => ({ t: i * 33, ratio: 0.4, irisPx: 40, face: true, open: 0.8, lum: 90, cx, cy, sep: 0.3 });
+  const still = (fs: Frame[]) => ready(fs).find((c) => c.id === "still")!.ok;
+
+  it("allows slow drift, because the crop follows the iris", () => {
+    expect(still(Array.from({ length: 15 }, (_, i) => at(i, 400 + i * 3, 300 + i * 2)))).toBe(true);
+  });
+
+  it("rejects fast shake that would blur the pupil", () => {
+    expect(still(Array.from({ length: 15 }, (_, i) => at(i, 400 + (i % 2 ? 12 : -12), 300)))).toBe(false);
+  });
+
+  it("ignores a single dropped frame", () => {
+    const fs = Array.from({ length: 15 }, (_, i) => at(i, 400 + i, 300));
+    fs[7] = { ...fs[7], face: false, cx: 0, cy: 0 };
+    expect(still(fs)).toBe(true);
   });
 });
