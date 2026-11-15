@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const LABS = [
-  ["/lab/pupil", "Pupil light test", "Front camera, about 1 minute"],
+  ["/lab/pupil", "Pupil light test", "Back camera and flash, about 1 minute"],
   ["/lab/hr", "Heart rate", "Fingertip on the back camera, 20 seconds"],
   ["/lab/sway", "Balance", "Phone on your chest, eyes closed, 30 seconds"],
 ];

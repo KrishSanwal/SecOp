@@ -279,12 +279,8 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
   const [go, setGo] = useState(0);
   const [ph, setPh] = useState<"open" | "align" | "run" | "fail">("open");
   const [eye, setEye] = useState<Eye>("r");
-  const [front, setFront] = useState(false);
-  const [cam, setCam] = useState<"" | "user" | "environment">("");
-  const [note, setNote] = useState("");
   const [checks, setChecks] = useState<Check[]>([]);
   const [count, setCount] = useState<number | null>(null);
-  const [flash, setFlash] = useState<"" | "dark" | "white">("");
   const [why, setWhy] = useState("");
   useEffect(() => {
     read.current = onRead;
@@ -314,17 +310,14 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
             }
           }
         };
-        let s = await get(cam === "user" ? "user" : "environment");
+        const s = await get("environment");
         const caps = (s.getVideoTracks()[0]?.getCapabilities?.() ?? {}) as { torch?: boolean };
-        const useFront = cam === "user" || !caps.torch;
-        setNote(cam === "environment" && !caps.torch ? "This phone won't let the app use the back flash, which the back camera needs to light the eye, so the front camera is on." : "");
-        if (useFront && cam !== "user") {
+        if (!caps.torch) {
           s.getTracks().forEach((t) => t.stop());
-          s = await get("user");
+          throw Object.assign(new Error("no flash"), { name: "NoTorch" });
         }
         if (!k.live) return s.getTracks().forEach((t) => t.stop());
         k.s = s;
-        setFront(useFront);
         const v = vid.current!;
         v.srcObject = s;
         await v.play().catch(() => {});
@@ -367,14 +360,11 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
           setPh("run");
           const rec: Frame[] = [];
           const until = async (ms: number) => { const t = performance.now(); while (performance.now() - t < ms) { await wait(16); rec.push(grab()); } };
-          if (useFront) setFlash("dark");
           await until(1500);
-          if (useFront) setFlash("white");
-          else await torch(true);
+          await torch(true);
           const at = performance.now();
           await until(2500);
-          setFlash("");
-          if (!useFront) await torch(false);
+          await torch(false);
           beep(990, 120);
           const rf = reflex(rec, at);
           out[e] = { con: rf.con, lat: rf.lat, ok: rf.ok && Number.isFinite(rf.con) && rf.con >= 0.05, curve: rf.curve };
@@ -383,7 +373,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
         await closeRear(k.s);
         k.s = null;
         if (!out.r.ok && !out.l.ok) {
-          setWhy("The camera couldn't separate the pupil from the iris. Common with dark eyes: add light from the front, or a red filter over the lens. Or rate by eye.");
+          setWhy("The camera couldn't separate the pupil from the iris. Common with dark eyes: add more light on the face, or a red filter over the lens. Or rate by eye.");
           setPh("fail");
           return;
         }
@@ -393,7 +383,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
         k.s = null;
         if (!k.live) return;
         const m = e instanceof Error ? e : new Error(String(e));
-        setWhy(m.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings, or rate by eye." : m.name === "NotReadableError" ? "The camera is busy. Close any other app using it and tap Try again, or rate by eye." : `Could not start the camera: ${m.message || m.name}`);
+        setWhy(m.name === "NoTorch" ? "This phone won't let the app turn on the flash, which the pupil test needs. Try Chrome on Android, or rate by eye." : m.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings, or rate by eye." : m.name === "NotReadableError" ? "The camera is busy. Close any other app using it and tap Try again, or rate by eye." : `Could not start the camera: ${m.message || m.name}`);
         setPh("fail");
       }
     })();
@@ -402,7 +392,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       k.s?.getTracks().forEach((t) => t.stop());
       k.s = null;
     };
-  }, [go, cam]);
+  }, [go]);
 
   const name = eye === "r" ? "right" : "left";
   return (
@@ -410,19 +400,13 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       {ph === "open" && <p className="text-dim">Opening the camera…</p>}
       {(ph === "align" || ph === "run") && (
         <p className="text-lg">
-          {front ? "Hold the front camera 10 to 15 cm from the subject's " : "Hold the back camera 15 to 20 cm from the subject's "}
+          Hold the back camera 15 to 20 cm from the subject&apos;s 
           <b>{name} eye</b>. Subject looks far away, eye wide open. Steady trick: hold it with both hands and rest a little finger on the subject&apos;s cheekbone, so the phone moves with their head.
         </p>
       )}
-      <video ref={vid} playsInline muted autoPlay className={`aspect-[4/3] w-full rounded-xl bg-black object-cover ${front ? "-scale-x-100" : ""} ${ph === "align" || ph === "run" ? "" : "hidden"}`} />
+      <video ref={vid} playsInline muted autoPlay className={`aspect-[4/3] w-full rounded-xl bg-black object-cover ${ph === "align" || ph === "run" ? "" : "hidden"}`} />
       {ph === "align" && <Status checks={checks} count={count} />}
       {ph === "run" && <p role="status" className="text-lg font-semibold">Measuring the {name} eye. Keep still.</p>}
-      {ph === "align" && note && <p className="text-alert">{note}</p>}
-      {ph === "align" && (
-        <button type="button" onClick={() => { setPh("open"); setCam(front ? "environment" : "user"); setGo((g) => g + 1); }} className={`${ghost} text-dim`}>
-          {front ? "Use the back camera" : "Use the front camera"}
-        </button>
-      )}
       {ph === "align" && (
         <button type="button" onClick={onHand} className={`${ghost} text-dim`}>
           Rate by eye instead
@@ -430,7 +414,6 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       )}
       {ph === "fail" && <Fail why={why} again={() => { setPh("open"); setGo((g) => g + 1); }} other={onHand} otherLabel="Rate by eye" />}
       <canvas ref={work} className="hidden" />
-      {flash && <div className={`fixed inset-0 z-50 ${flash === "dark" ? "bg-black" : "bg-white"}`} />}
     </div>
   );
 }

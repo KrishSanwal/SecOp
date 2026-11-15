@@ -6,7 +6,7 @@ import { closeRear } from "@/lib/ppg";
 import { landmarker, measure, ready, reflex, type Check, type Eye, type Frame, type Reflex } from "@/lib/pupil";
 
 type Ph = "prep" | "align" | "dark" | "flash" | "done";
-type Mode = "back" | "front";
+type Mode = "back";
 
 const PREP: Record<Mode, string[]> = {
   back: [
@@ -15,13 +15,6 @@ const PREP: Record<Mode, string[]> = {
     "Glasses off",
     "Back camera at eye level, 15 to 20 cm from the eye",
     "Look past the phone at something far away, not into the light",
-  ],
-  front: [
-    "Screen brightness to maximum",
-    "Room lights on, a lamp in front of you helps",
-    "Glasses off",
-    "Hold the phone at eye level, 10 to 15 cm from your face",
-    "Look straight into the front camera, not at the screen",
   ],
 };
 
@@ -53,8 +46,7 @@ export default function PupilLab() {
   const [out, setOut] = useState<Reflex | null>(null);
   const [debug, setDebug] = useState(false);
   const [err, setErr] = useState("");
-  const [mode, setMode] = useState<Mode>("back");
-  const [note, setNote] = useState("");
+  const mode: Mode = "back";
 
   const st = useRef({ ph: "prep" as Ph, eye: "r" as Eye, fs: [] as Frame[], rec: null as Frame[] | null, okRun: 0, busy: false, debug: false, raf: 0, s: null as MediaStream | null, mode: "back" as Mode });
   useEffect(() => {
@@ -76,18 +68,15 @@ export default function PupilLab() {
     let step = "camera";
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access. Open the page in Chrome or Safari, over https.");
-      let m = mode;
+      const m = mode;
       const get = (fm: "user" | "environment") =>
         navigator.mediaDevices
           .getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
           .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
-      let s = await get(m === "back" ? "environment" : "user");
-      if (m === "back" && !hasTorch(s)) {
+      const s = await get("environment");
+      if (!hasTorch(s)) {
         s.getTracks().forEach((t) => t.stop());
-        m = "front";
-        setMode("front");
-        setNote("This phone or browser can't control the flash, so the test uses the front camera and the screen instead. Chrome on Android supports the flash.");
-        s = await get("user");
+        throw new Error("This phone or browser can't control the flash, which the pupil test needs. Try Chrome on Android, or use the examiner check.");
       }
       st.current.s = s;
       st.current.mode = m;
@@ -178,17 +167,7 @@ export default function PupilLab() {
     <Page title="Pupil light test" intro="A bright light and the camera time how fast the pupil shrinks. One eye at a time.">
       {err && <p className="text-alert">{err}</p>}
 
-      {ph === "prep" && (
-        <div className="flex gap-2" role="group" aria-label="Who holds the phone">
-          {(["back", "front"] as Mode[]).map((m) => (
-            <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className="min-h-11 flex-1 rounded-lg border border-edge px-2 text-sm aria-pressed:border-accent aria-pressed:text-accent">
-              {m === "back" ? "Crewmate holds the phone" : "Test myself"}
-            </button>
-          ))}
-        </div>
-      )}
       {ph === "prep" && <Prep key={mode} items={PREP[mode]} onAll={open} />}
-      {note && <p className="text-sm text-dim">{note}</p>}
       <video ref={vid} playsInline muted autoPlay className={`order-none aspect-[4/3] w-full ${back ? "" : "-scale-x-100"} rounded-lg bg-black object-cover ${ph === "align" ? "" : "hidden"}`} />
 
       {ph !== "prep" && (

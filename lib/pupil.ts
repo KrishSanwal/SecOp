@@ -163,7 +163,7 @@ export function ready(fs: Frame[]): Check[] {
     { id: "open", ok: !!f && f.open > 0.55, fix: "Open the eye wide" },
     { id: "light", ok: !!f && f.lum > 35, fix: "Turn the room lights on" },
     { id: "still", ok: shake < SHAKE, fix: "Steady the phone: rest a little finger on the subject's cheek" },
-    { id: "sep", ok: med(recent.map((x) => x.sep)) > 0.12, fix: "Pupil not visible yet: add more light from the front, or switch to the back camera with flash" },
+    { id: "sep", ok: med(recent.map((x) => x.sep)) > 0.12, fix: "Pupil not visible yet: add more light on the face" },
   ];
 }
 

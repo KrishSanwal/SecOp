@@ -71,7 +71,7 @@ No. It flags change from your own normal and tells you what NASA's checklist say
 
 ## 4. Ten-second facts
 - 5 stations, about 5 minutes, 2 people
-- 3 phone sensors: front or back camera, flash, motion sensor
+- 3 phone sensors: back camera, flash, motion sensor
 - Baseline = your first 2 exams
 - 29 automated tests
 - Works fully offline after one visit

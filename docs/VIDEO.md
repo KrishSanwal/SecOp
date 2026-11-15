@@ -30,7 +30,7 @@ Drop every file in `Vault/Inbox/secop-video/` with the exact names below.
 ### Shaurya's demo clips (airplane mode on, Try demo loaded, permissions already granted)
 | File | What | How |
 |---|---|---|
-| D1.mp4 | Pupil test | Film the phone from behind with a second phone, or do it on yourself: /lab/pupil, back camera to your own eye in a mirror is hard, so use the front-camera fallback and let the curve draw. 8 s. |
+| D1.mp4 | Pupil test | Film the phone from behind with a second phone, or do it on yourself: /lab/pupil, back camera to your own eye in a mirror is hard, so film it on a crewmate and let the curve draw. 8 s. |
 | D2.mp4 | Pulse | Second phone films your hand: fingertip on the back camera, wave scrolls, bpm lands, hand visibly buzzes. 8 s. |
 | D3.mp4 | Balance | Phone on chest, eyes closed, beeps, "Looks normal". 6 s. |
 | D4.mp4 | Result card | Screen recording: Asha's latest exam, scroll slowly past the three flags and "Do now", stop on the Mars countdown. 10 s. |
