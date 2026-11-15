@@ -25,5 +25,5 @@ The rest are "roadmap" answers for the Q&A ("what would you do with more time?")
 
 ## Not doing, and why (good Q&A answers)
 - **No AI diagnosis.** We flag drift and point to NASA's own checklist; the flight surgeon decides. Safer, explainable, and the checklist is what astronauts actually train on.
-- **No wearable required.** Every crew already carries a phone or tablet; extra hardware is mass and another thing to break. The Fitbit page is optional context and the exam never needs it.
+- **No wearable required.** Every crew already carries a phone or tablet; extra hardware is mass and another thing to break. The wearables page is optional context and the exam never needs it.
 - **No cloud.** Mars has no internet; everything runs on the device.

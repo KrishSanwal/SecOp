@@ -1,4 +1,4 @@
-import { fold, type Pts } from "./map";
+import { beatsOf, fold, type Pts } from "./map";
 import type { Pull } from "./types";
 
 const AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -49,7 +49,7 @@ async function tok(body: Record<string, string>) {
   const j = await res.json().catch(() => null);
   if (!res.ok || !j) {
     const bad = j?.error === "invalid_grant";
-    throw new HError(bad ? 401 : 502, bad ? "Google access expired. Connect the band again." : `Google token ${res.status}: ${String(j?.error_description ?? j?.error ?? "no body").slice(0, 160)}`);
+    throw new HError(bad ? 401 : 502, bad ? "Google access expired. Connect the wearable again." : `Google token ${res.status}: ${String(j?.error_description ?? j?.error ?? "no body").slice(0, 160)}`);
   }
   return j as { access_token?: string; refresh_token?: string };
 }
@@ -69,7 +69,7 @@ export async function refresh(rt: string) {
 const snake = (t: string) => t.replaceAll("-", "_");
 const ymd = (t: number) => new Date(t).toISOString().slice(0, 10);
 
-type Kind = "date" | "start" | "end";
+type Kind = "date" | "start" | "end" | "sample";
 const SPEC: [string, Kind, number][] = [
   ["daily-resting-heart-rate", "date", 1],
   ["daily-heart-rate-variability", "date", 1],
@@ -84,10 +84,11 @@ const SPEC: [string, Kind, number][] = [
   ["irregular-rhythm-notification", "start", 1],
 ];
 
-async function list(access: string, type: string, kind: Kind, pages: number, from: number): Promise<Pts> {
+async function list(access: string, type: string, kind: Kind, pages: number, from: number, to?: number): Promise<Pts> {
   const s = snake(type);
-  const filter =
-    kind === "date" ? `${s}.date >= "${ymd(from)}"` : kind === "end" ? `${s}.interval.end_time >= "${new Date(from).toISOString()}"` : `${s}.interval.start_time >= "${new Date(from).toISOString()}"`;
+  const at = kind === "end" ? `${s}.interval.end_time` : kind === "start" ? `${s}.interval.start_time` : `${s}.sample_time.physical_time`;
+  let filter = kind === "date" ? `${s}.date >= "${ymd(from)}"` : `${at} >= "${new Date(from).toISOString()}"`;
+  if (to !== undefined && kind !== "date") filter += ` AND ${at} < "${new Date(to).toISOString()}"`;
   const out: Pts = [];
   let next = "";
   for (let i = 0; i < pages; i++) {
@@ -120,6 +121,10 @@ export async function pull(access: string, days = 30, now = Date.now()): Promise
   });
   if (missing.length === SPEC.length) throw new HError(502, `Google Health returned nothing. ${String((rs[0] as PromiseRejectedResult).reason?.message ?? "").slice(0, 200)}`);
   return { days: fold(by), missing, at: now };
+}
+
+export async function beats(access: string, from: number, to: number) {
+  return beatsOf(await list(access, "heart-rate", "sample", 2, from, to));
 }
 
 export function hfail(e: unknown) {

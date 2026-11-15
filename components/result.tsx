@@ -139,7 +139,7 @@ export default function Result() {
               name="Heart rate"
               flag={hit("hr")}
               today={`Rose ${Math.round(r.m.hr)} bpm on standing`}
-              more={`${Math.round(res.hr.sit * 4)} sitting, ${Math.round(res.hr.stand * 4)} standing, ${res.hr.cam ? "by camera" : "counted by hand"}`}
+              more={`${Math.round(res.hr.sit * 4)} sitting, ${Math.round(res.hr.stand * 4)} standing, ${res.hr.band ? "from the wearable" : res.hr.cam ? "by camera" : "counted by hand"}`}
               usual={b && ok(b.hr) ? `rose ${Math.round(b.hr)} bpm` : null}
               change={r.delta && ok(r.delta.hr) ? `${sign(r.delta.hr)} bpm` : null}
             />

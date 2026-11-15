@@ -34,7 +34,7 @@ export function useWear(id: string | null, autoSync = false): Wear {
       const res = await fetch(`/api/health/data?crew=${encodeURIComponent(id)}`).catch(() => null);
       if (!res) throw new Error("No connection. Showing the last saved readings.");
       const j = await res.json().catch(() => null);
-      if (res.status === 401) throw new Error("Band not connected yet. Connect it to see real readings.");
+      if (res.status === 401) throw new Error("Wearable not connected yet. Connect it to see real readings.");
       if (!res.ok || !j || !Array.isArray(j.days)) throw new Error(j?.error ?? `Sync failed (${res.status}).`);
       const p: Pull = { days: j.days, missing: Array.isArray(j.missing) ? j.missing : [], at: typeof j.at === "number" ? j.at : Date.now() };
       await savePull({ ...p, crew: id, src: "live" });

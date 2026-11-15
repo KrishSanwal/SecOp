@@ -7,7 +7,7 @@ Deadline: **Sunday 15 Nov 2026, 11:59 PM IST.** Submission is final. Demo video:
 Two astronauts examine each other for five minutes; the phone's own camera and motion sensor take the
 measurements, the app compares each person against their own previous sessions, and tells them what to
 do next using NASA's ISS Medical Checklist. The examiner holds and positions the phone; they do not judge.
-An optional wearables page adds daily context from a Fitbit Air band. The exam never depends on it.
+An optional wearables page adds daily context from a wearable. The exam never depends on it.
 
 ## Design (decided)
 
@@ -55,7 +55,7 @@ Dark brown eyes are the known risk; verify with `/lab/pupil` before relying on i
   (the last sync only). Database names kept the old app name on purpose, so saved data survives the rename.
 
 ### Wearables (optional, added Sun 15 Nov, Krish, PR #26)
-- `/wearables?crew=` shows daily readings from a Fitbit Air through the Google Health API: resting and
+- `/wearables?crew=` shows daily readings from a wearable through the Google Health API: resting and
   sleeping heart rate, HRV, sleep (deep, REM), blood oxygen, breathing rate, skin temperature, steps,
   active minutes, cardio fitness, sedentary time, irregular rhythm alerts. `/wearables/metric?crew=&m=`
   shows one reading with a line chart and plain "what this means" and "on a mission" text.

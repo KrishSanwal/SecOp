@@ -44,6 +44,19 @@ const add = (m: Map<string, Day>, d: string | undefined, k: "stp" | "act" | "sed
   m.set(d, cur);
 };
 
+export type Beat = { t: number; bpm: number };
+
+export function beatsOf(pts: Pts): Beat[] {
+  return pts
+    .flatMap((p) => {
+      const x = obj(obj(p)?.heartRate);
+      const t = Date.parse(String(obj(x?.sampleTime)?.physicalTime ?? ""));
+      const bpm = num(x?.beatsPerMinute);
+      return Number.isFinite(t) && bpm !== undefined && bpm >= 25 && bpm <= 230 ? [{ t, bpm }] : [];
+    })
+    .sort((a, b) => a.t - b.t);
+}
+
 export function fold(by: Record<string, Pts>): Day[] {
   const m = new Map<string, Day>();
 

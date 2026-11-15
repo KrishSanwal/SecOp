@@ -3,7 +3,7 @@ export type Sway = "none" | "mild" | "marked" | "out";
 
 export interface Results {
   pupils: { l: Pupil; r: Pupil; lat?: number; con?: number; asym?: number; curve?: number[] };
-  hr: { sit: number; stand: number; cam?: boolean };
+  hr: { sit: number; stand: number; cam?: boolean; band?: boolean };
   bal: { sway: Sway; secs: number; rms?: number };
   mood: { sleep: number; score: 1 | 2 | 3 | 4 | 5; note: string };
   rx: { ms: number[] };

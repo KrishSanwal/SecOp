@@ -29,7 +29,7 @@ Open http://localhost:3000.
 
 Next.js (App Router) on Vercel, TypeScript, Tailwind. Voice prompts are pre-recorded MP3s, so the exam
 needs no API key and no network. Sensors: MediaPipe Face Landmarker, camera PPG, device motion.
-Storage: IndexedDB via `idb`. No backend database. Optional wearables page reads a Fitbit Air through the
+Storage: IndexedDB via `idb`. No backend database. Optional wearables page reads a wearable through the
 Google Health API when the two Google OAuth variables are set.
 
 ## NASA data and resources used

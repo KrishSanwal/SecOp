@@ -43,7 +43,7 @@ export default function Detail() {
           {hit && <p className="rounded-lg border border-alert/60 bg-panel p-3 text-alert">Worth a recheck. {hit.msg}</p>}
         </section>
       ) : (
-        <p className="text-dim">No reading yet. Wear the band overnight and sync.</p>
+        <p className="text-dim">No reading yet. Wear it overnight and sync.</p>
       )}
 
       {m.k !== "irn" && (
