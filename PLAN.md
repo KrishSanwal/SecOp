@@ -54,15 +54,11 @@ brown eyes are the known weak spot, so check with `/lab/pupil` before relying on
 - Results export as JSON from the results screen.
 - Band readings live in their own small database, just the last sync for each crew member.
 
-## Monitors page (optional)
+## Wearables page (optional)
 
-ISS crews already wear an Actiwatch Spectrum for sleep and activity and a Bio-Monitor shirt for heart
-rate, breathing, blood oxygen and skin temperature, but those numbers go to the ground and the crew
-never sees them. This page shows what SecOp would do with that data.
-
-- `/wearables?crew=` shows daily readings: resting and sleeping heart rate, HRV, sleep (deep, REM), blood
-  oxygen, breathing rate, skin temperature, steps, active minutes, cardio fitness, sedentary time and
-  irregular rhythm alerts. `/wearables/metric?crew=&m=` opens one reading with a chart and a plain
+- `/wearables?crew=` shows daily readings from each crew member's band: resting and sleeping heart
+  rate, HRV, sleep (deep, REM), blood oxygen, breathing rate, skin temperature, steps, active minutes,
+  cardio fitness, sedentary time and irregular rhythm alerts. `/wearables/metric?crew=&m=` opens one reading with a chart and a plain
   explanation.
 - Each crew member signs in with Google, read-only. The sign-in stays in a cookie on their own phone. We
   have no accounts of our own and store nothing on a server.
@@ -75,10 +71,10 @@ never sees them. This page shows what SecOp would do with that data.
 - Station 2 can take its heart rate from the band. Nothing else from the band changes the exam scores or
   action cards.
 
-What we'd actually send up: a small health tracker for the station that monitors the heart properly,
-ECG included, and passes its readings to the crew's phone or tablet over a wire, so no internet or
-Google account is involved. We only have a consumer wrist band to build with, so we're sticking with
-that for the prototype.
+What we'd actually send up: a new kind of wearable, light enough to wear 24/7 like the Fitbit Air, that
+tracks the heart properly, ECG included, and passes its readings to the crew's phone or tablet over a
+wire, so no internet or Google account is involved. We have a Fitbit Air, so we're sticking with that
+for the prototype.
 
 ## Screens
 
@@ -87,7 +83,7 @@ that for the prototype.
 3. `/result?id=` Result card: five rows, change from baseline, flags, action cards.
 4. `/trend?crew=` That person's exams over time.
 5. `/sync` Copy records from one phone to another by QR code.
-6. `/wearables?crew=` The monitors page.
+6. `/wearables?crew=` The wearables page.
 7. `/lab`, `/lab/pupil`, `/lab/hr`, `/lab/sway` Sensor test pages.
 
 We use query params instead of `[id]` folders so the offline cache covers every exam. Dark UI, one accent
@@ -95,7 +91,7 @@ colour, no NASA logos anywhere.
 
 ## Not building
 
-- Extra hardware for the exam. It runs on the phone alone, and the monitors page is a bonus.
+- Extra hardware for the exam. It runs on the phone alone, and the wearables page is a bonus.
 - Bluetooth, or pulse from the face (rPPG).
 - Accounts, a server database or a Mission Control view. The only server code is the few small
   `/api/health` routes behind the Google sign-in.
@@ -125,7 +121,7 @@ A = Shaurya, B = Krish. Each task is a GitHub issue. Assign yourself to claim it
 | 16 | Camera pupils in the exam (if 14 is a go) | A | done |
 | 17 | Result card shows latency, constriction and sway against usual | B | numbers show with "usual" |
 | 18 | In-transit switch that skips stations 2 and 3 | B | switch on the intro screen |
-| 19 | Monitors page: Google sign-in, sync, 14-day usual, flags, sample data, offline | B | done |
+| 19 | Wearables page: Google sign-in, sync, 14-day usual, flags, sample data, offline | B | done |
 | 20 | Google keys on Vercel so a real band works in the demo | B | sign-in reaches Google's consent screen |
 | 21 | Station 2 can use the band's heart rate instead of the camera | B | done |
 
