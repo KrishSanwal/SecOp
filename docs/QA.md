@@ -91,3 +91,7 @@ No. It flags change from your own normal and tells you what NASA's checklist say
 **Crew board.** Home page lists everyone with last exam and flag count. `crewInsight` (lib/insights.ts): if at least two people and at least half the crew got worse on the same measurement at their latest exam, it says to check the cabin (CO2, sleep schedule, food, noise) before the people.
 
 **In space / on a surface.** Asked before each exam; in space the two gravity stations are skipped and never enter the baseline.
+
+**Wearables (Krish).** `/wearables`. Daily readings from a Fitbit Air through the Google Health API: resting and sleeping heart rate, HRV, sleep, blood oxygen, breathing rate, skin temperature, activity. Each is compared with the person's own 14-day usual (`lib/health/base.ts`, limits in `LIM`), with plain-language "what this means" and "on a mission" text per reading. Shows clearly labelled sample data until a band is connected with Google sign-in. Last pull is cached in IndexedDB so it reads offline.
+
+**Doesn't a cloud API break "offline"?** The exam never touches it. The band section is context: it needs a network to sync and keeps the last sync on the phone. On a Mars mission the same readings would come from the band over Bluetooth, not from Google; the scoring and screens would not change. If asked, say that plainly.
