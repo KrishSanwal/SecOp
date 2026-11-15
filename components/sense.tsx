@@ -300,10 +300,20 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
     (async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser has no camera access.");
-        const get = (fm: "user" | "environment") =>
-          navigator.mediaDevices
-            .getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
-            .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+        const get = async (fm: "user" | "environment") => {
+          for (let i = 0; ; i++) {
+            try {
+              return await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+            } catch (e) {
+              // the camera just released can stay busy for a moment on Android
+              if (i < 4 && e instanceof Error && (e.name === "NotReadableError" || e.name === "AbortError")) {
+                await wait(400);
+                continue;
+              }
+              return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
+          }
+        };
         let s = await get(cam === "user" ? "user" : "environment");
         const caps = (s.getVideoTracks()[0]?.getCapabilities?.() ?? {}) as { torch?: boolean };
         const useFront = cam === "user" || !caps.torch;
@@ -383,13 +393,14 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
         k.s = null;
         if (!k.live) return;
         const m = e instanceof Error ? e : new Error(String(e));
-        setWhy(m.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings, or rate by eye." : `Could not start the camera: ${m.message || m.name}`);
+        setWhy(m.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the browser settings, or rate by eye." : m.name === "NotReadableError" ? "The camera is busy. Close any other app using it and tap Try again, or rate by eye." : `Could not start the camera: ${m.message || m.name}`);
         setPh("fail");
       }
     })();
     return () => {
       k.live = false;
-      closeRear(k.s);
+      k.s?.getTracks().forEach((t) => t.stop());
+      k.s = null;
     };
   }, [go, cam]);
 
