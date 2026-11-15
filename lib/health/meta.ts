@@ -2,7 +2,10 @@ import type { Meta } from "./types";
 
 const n0 = (v: number) => Math.round(v).toString();
 const n1 = (v: number) => v.toFixed(1);
-const hm = (v: number) => `${Math.floor(v / 60)} h ${String(Math.round(v % 60)).padStart(2, "0")} min`;
+const hm = (v: number) => {
+  const m = Math.round(v);
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
+};
 
 export const META: Meta[] = [
   {
