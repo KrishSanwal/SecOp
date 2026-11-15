@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } fr
 import { listCrew, putCrew, uid } from "@/lib/db";
 import type { Crew } from "@/lib/types";
 import { Bottom, btn, ghost, primary, tile } from "./ui";
+import { VoiceSwitch } from "./voice";
 
 type Slot = "subj" | "exr";
 
@@ -105,6 +106,7 @@ export default function CrewPick() {
       <AddCrew crew={crew} onAdd={add} />
 
       <Bottom>
+        <VoiceSwitch wide />
         {ready ? (
           <Link href={{ pathname: "/exam", query: { subj: s.id, exr: x.id } }} className={primary}>
             Start the exam

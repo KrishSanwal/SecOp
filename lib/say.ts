@@ -1,4 +1,5 @@
 import type { PromptId } from "./prompts";
+import { voiceOn } from "./voice";
 
 let cur: HTMLAudioElement | null = null;
 let stop: ((ended: boolean) => void) | null = null;
@@ -12,6 +13,7 @@ function cut() {
 
 export function say(id: PromptId): Promise<boolean> {
   cut();
+  if (!voiceOn()) return Promise.resolve(true);
   const a = new Audio(`/audio/${id}.mp3`);
   cur = a;
   return new Promise((done) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Heartbeat, Lightning, MoonStars, PersonSimple, SpeakerHigh, SpeakerSlash, type Icon } from "@phosphor-icons/react";
+import { Eye, Heartbeat, Lightning, MoonStars, PersonSimple, type Icon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -15,6 +15,7 @@ import { CamHr, CamPupil, MotionBal, type EyeRead } from "./sense";
 import { ReflexGraph } from "./reflex";
 import { examsOf } from "@/lib/db";
 import { Back, Bottom, btn, Choice, Cue, ghost, primary, Stepper, Tag, Talk, Timed, useCues } from "./ui";
+import { VoiceSwitch } from "./voice";
 
 type Key = "pupils" | "hr" | "bal" | "mood" | "rx";
 type Part = Partial<Results>;
@@ -39,8 +40,6 @@ export default function Exam() {
   const [err, setErr] = useState("");
   const [n, setN] = useState(-1);
   const [res, setRes] = useState<Part>({});
-  const [voice, setVoice] = useState(true);
-  const on = useRef(true);
   const [saved, setSaved] = useState("");
   const [leave, setLeave] = useState(false);
   const [where, setWhere] = useState<"surface" | "space">(() => {
@@ -78,13 +77,7 @@ export default function Exam() {
     };
   }, []);
 
-  const talk = useCallback((id: PromptId) => (on.current ? say(id) : Promise.resolve(true)), []);
-
-  function mute() {
-    on.current = !voice;
-    if (voice) hush();
-    setVoice(!voice);
-  }
+  const talk = useCallback((id: PromptId) => say(id), []);
 
   function pick(w: "surface" | "space") {
     setWhere(w);
@@ -157,10 +150,7 @@ export default function Exam() {
     <Talk.Provider value={talk}>
       <div className="flex items-center justify-between gap-2">
         {n < 0 ? <Back href="/" label="Crew" /> : <Back onClick={back} label={n === 0 ? "Leave" : "Back"} />}
-        <button type="button" aria-pressed={!voice} onClick={mute} className={`${btn} -mr-3 px-3 text-dim hover:text-accent`}>
-          {voice ? <SpeakerHigh size={20} weight="bold" aria-hidden /> : <SpeakerSlash size={20} weight="bold" aria-hidden />}
-          {voice ? "Mute voice" : "Unmute voice"}
-        </button>
+        <VoiceSwitch />
       </div>
 
       {leave && (
