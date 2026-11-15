@@ -12,7 +12,7 @@ The challenge says astronauts carry responsibility for spotting changes in thems
 Crews on long missions with a big communication delay: Mars, a Moon base. On Earth: analog missions, Antarctic stations, ships, rural health workers.
 
 **What NASA data or resources did you use?**
-ISS Medical Checklist JSC-48522 for the actions, NASA-STD-3001 Vol 1 and 2 for limits (CO2, gravity transitions), HRP evidence reports for orthostatic intolerance, sleep loss and behavioral health, NASA-funded Cognition / PVT-B research for the reaction test. All linked in docs/SOURCES.md.
+ISS Medical Checklist JSC-48522 for the actions, NASA-STD-3001 Vol 1 and 2 for limits (CO2, gravity transitions), HRP evidence reports for orthostatic intolerance, sleep loss and behavioral health, NASA-funded Cognition / PVT-B research for the reaction test, and NASA JPL's orbital elements for Earth and Mars, which compute today's real Mars light delay on the result card. All linked in docs/SOURCES.md.
 
 **Is it a medical device? Does it diagnose?**
 No. It flags change from your own normal and tells you what NASA's checklist says to do and when to call the flight surgeon. The surgeon decides. The result screen says "not a medical device".

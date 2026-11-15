@@ -1,7 +1,7 @@
 # Sources
 
 Every resource used in the project, for the submission form. Verify each link opens before submitting.
-Keys in brackets are how `CHECKLIST_MAP.md` cites them. All links below were checked on 14 Nov 2026.
+Keys in brackets are how `CHECKLIST_MAP.md` cites them. All links below were checked on 14 Nov 2026 (JPL added 15 Nov 2026).
 
 ## NASA
 
@@ -17,7 +17,8 @@ Keys in brackets are how `CHECKLIST_MAP.md` cites them. All links below were che
 | WOOD | Wood, Sensorimotor adaptation during and following spaceflight, NASA JSC (2021) | https://ntrs.nasa.gov/api/citations/20210025094/downloads/Wood-AeroMed%20UTHNeuro-Dec21.pdf | Romberg in the post-flight neuro exam |
 | | NASA Human Research Roadmap | https://humanresearchroadmap.nasa.gov/ | risk definitions |
 | | NASA Human Research Program | https://www.nasa.gov/hrp/ | background |
-| | NASA Open Science Data Repository | https://osdr.nasa.gov/ | reference datasets |
+| JPL | NASA JPL Solar System Dynamics, Approximate Positions of the Planets (Keplerian elements, Standish and Williams), Table 1 | https://ssd.jpl.nasa.gov/planets/approx_pos.html | Earth and Mars orbital elements in `lib/mars.ts`: live Earth-Mars distance and one-way light delay on the result card |
+| | NASA Open Science Data Repository | https://osdr.nasa.gov/ | background reading only; no OSDR dataset is used in the app |
 | | NASA human spaceflight standards index | https://www.nasa.gov/ochmo/human-spaceflight-and-aviation-standards | which standard revisions are current |
 
 ## NASA-funded research
