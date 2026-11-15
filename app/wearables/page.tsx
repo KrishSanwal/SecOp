@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Board from "@/components/wearables/board";
 
-export const metadata: Metadata = { title: "Monitors · SecOp" };
+export const metadata: Metadata = { title: "Wearables · SecOp" };
 
 export default function Page() {
   return (

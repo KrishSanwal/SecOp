@@ -474,17 +474,17 @@ function BandHeart({ sid, onRead, onCam }: { sid: string; onRead: (sit: Read, st
           const j = await res.json().catch(() => null);
           if (!live) return;
           if (!res.ok) {
-            setWhy(String(j?.error ?? `The Bio-Monitor request failed (${res.status}).`));
+            setWhy(String(j?.error ?? `The wearable request failed (${res.status}).`));
             if ([400, 401, 403, 500].includes(res.status)) return setStuck(true);
           } else {
             const pts = Array.isArray(j?.pts) ? j.pts : [];
             const r = bandHr(pts, [T.a0, T.a1], [T.b0, T.b1]);
             if (Number.isFinite(r.sit) && Number.isFinite(r.stand)) return read.current({ n: r.sit / 4, cam: false, band: true }, { n: r.stand / 4, cam: false, band: true });
-            setWhy(pts.length ? "Part of the exam has arrived from the Bio-Monitor. Waiting for the rest…" : "Nothing from the Bio-Monitor for these minutes yet.");
+            setWhy(pts.length ? "Part of the exam has arrived from the wearable. Waiting for the rest…" : "Nothing from the wearable for these minutes yet.");
           }
         } catch {
           if (!live) return;
-          setWhy("No network. Getting the Bio-Monitor's readings needs a connection.");
+          setWhy("No network. Getting the wearable's readings needs a connection.");
         }
         if (Date.now() > end) return setStuck(true);
         await new Promise((r) => setTimeout(r, 8000));
@@ -500,7 +500,7 @@ function BandHeart({ sid, onRead, onCam }: { sid: string; onRead: (sit: Read, st
       <section className="flex flex-col gap-4">
         {st === "sit" && (
           <>
-            <p className="font-display text-2xl leading-snug font-semibold text-chalk">Subject sits still and relaxes. The Bio-Monitor is reading the heart rate.</p>
+            <p className="font-display text-2xl leading-snug font-semibold text-chalk">Subject sits still and relaxes. The wearable is reading the heart rate.</p>
             <Timed
               key="bsit"
               secs={60}
@@ -530,10 +530,10 @@ function BandHeart({ sid, onRead, onCam }: { sid: string; onRead: (sit: Read, st
         )}
         {st === "get" && (
           <>
-            <p className="font-display text-2xl leading-snug font-semibold text-chalk">Getting the heart rate from the Bio-Monitor</p>
-            <p className="text-lg">Open the Bio-Monitor&apos;s app on the phone it is paired with and sync it. This screen checks every few seconds.</p>
+            <p className="font-display text-2xl leading-snug font-semibold text-chalk">Getting the heart rate from the wearable</p>
+            <p className="text-lg">Open the wearable&apos;s app on the phone it is paired with and sync it. This screen checks every few seconds.</p>
             <p role="status" className={stuck ? "text-alert" : "text-dim"}>
-              {stuck ? why || "The Bio-Monitor has not sent these minutes yet." : why || "Checking…"}
+              {stuck ? why || "The wearable has not sent these minutes yet." : why || "Checking…"}
             </p>
           </>
         )}
@@ -550,7 +550,7 @@ function BandHeart({ sid, onRead, onCam }: { sid: string; onRead: (sit: Read, st
               }}
               className={primary}
             >
-              Check the Bio-Monitor again
+              Check the wearable again
             </button>
           )}
           <button type="button" onClick={onCam} className={`${ghost} text-dim`}>
@@ -569,7 +569,7 @@ function Heart({ onDone, next, sid }: Step & { sid: string }) {
   const [band, setBand] = useState(false);
   const rise = sit && stand ? bpm(stand) - bpm(sit) : 0;
   const high = rise > LIMITS.hr;
-  const how = sit && stand ? (sit.band && stand.band ? "Bio-Monitor" : sit.cam && stand.cam ? "Camera" : sit.cam || stand.cam ? "Camera and hand" : "Hand count") : "";
+  const how = sit && stand ? (sit.band && stand.band ? "Wearable" : sit.cam && stand.cam ? "Camera" : sit.cam || stand.cam ? "Camera and hand" : "Hand count") : "";
   useEffect(() => {
     getPull(sid)
       .then((p) => setBand(p?.src === "live"))
@@ -582,8 +582,8 @@ function Heart({ onDone, next, sid }: Step & { sid: string }) {
         {step === "prep" && <Prep items={PREP.hr} onAll={() => setStep(band ? "how" : "sit")} />}
         {step === "how" && (
           <div className="flex flex-col gap-3">
-            <p className="font-display text-2xl leading-snug font-semibold text-chalk">This subject&apos;s Bio-Monitor is connected on this phone.</p>
-            <p className="text-lg">Use the Bio-Monitor for both readings: one minute sitting, a bit over a minute standing, then the app gets the Bio-Monitor&apos;s heart rate for exactly those minutes. Steadier than the camera.</p>
+            <p className="font-display text-2xl leading-snug font-semibold text-chalk">This subject&apos;s wearable is connected on this phone.</p>
+            <p className="text-lg">Use the wearable for both readings: one minute sitting, a bit over a minute standing, then the app gets the wearable&apos;s heart rate for exactly those minutes. Steadier than the camera.</p>
           </div>
         )}
         {step === "band" && (
@@ -654,7 +654,7 @@ function Heart({ onDone, next, sid }: Step & { sid: string }) {
       {step === "how" && (
         <Bottom>
           <button type="button" onClick={() => setStep("band")} className={primary}>
-            Use the Bio-Monitor
+            Use the wearable
           </button>
           <button type="button" onClick={() => setStep("sit")} className={`${ghost} text-dim`}>
             Use the camera instead

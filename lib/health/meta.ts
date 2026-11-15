@@ -25,7 +25,7 @@ export const META: Meta[] = [
   },
   {
     k: "slp", t: "Sleep", unit: "min", group: "Recovery", worse: -1, fmt: hm,
-    what: "Time asleep last night, from your Actiwatch. Most adults need 7 to 9 hours. Deep and REM stages matter as much as the total.",
+    what: "Time asleep last night, from your wearable. Most adults need 7 to 9 hours. Deep and REM stages matter as much as the total.",
     space: "Crews often sleep less than planned in space. Two short nights in a row is worth acting on.",
   },
   {
@@ -45,7 +45,7 @@ export const META: Meta[] = [
   },
   {
     k: "stp", t: "Steps", unit: "steps", group: "Activity", worse: -1, fmt: (v) => Math.round(v).toLocaleString("en"),
-    what: "Steps counted by the Actiwatch today. It is a rough measure of how much you moved.",
+    what: "Steps counted by the wearable today. It is a rough measure of how much you moved.",
     space: "In microgravity steps stay low, so use it for surface days and exercise sessions, not as a health signal in transit.",
   },
   {
@@ -65,7 +65,7 @@ export const META: Meta[] = [
   },
   {
     k: "irn", t: "Irregular rhythm alerts", unit: "alerts", group: "Overnight", worse: 1, fmt: (v) => (v === 0 ? "None" : `${n0(v)} today`),
-    what: "The Bio-Monitor can notice a pulse pattern that looks irregular and send an alert. It is a prompt to check in, not a diagnosis.",
+    what: "The wearable can notice a pulse pattern that looks irregular and send an alert. It is a prompt to check in, not a diagnosis.",
     space: "Any alert should be reported to the flight surgeon, who can ask for an ECG.",
   },
 ];
