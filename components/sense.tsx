@@ -280,6 +280,8 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
   const [ph, setPh] = useState<"open" | "align" | "run" | "fail">("open");
   const [eye, setEye] = useState<Eye>("r");
   const [front, setFront] = useState(false);
+  const [cam, setCam] = useState<"" | "user" | "environment">("");
+  const [note, setNote] = useState("");
   const [checks, setChecks] = useState<Check[]>([]);
   const [count, setCount] = useState<number | null>(null);
   const [flash, setFlash] = useState<"" | "dark" | "white">("");
@@ -302,10 +304,11 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
           navigator.mediaDevices
             .getUserMedia({ video: { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
             .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
-        let s = await get("environment");
+        let s = await get(cam === "user" ? "user" : "environment");
         const caps = (s.getVideoTracks()[0]?.getCapabilities?.() ?? {}) as { torch?: boolean };
-        const useFront = !caps.torch;
-        if (useFront) {
+        const useFront = cam === "user" || !caps.torch;
+        setNote(cam === "environment" && !caps.torch ? "This phone won't let the app use the back flash, which the back camera needs to light the eye, so the front camera is on." : "");
+        if (useFront && cam !== "user") {
           s.getTracks().forEach((t) => t.stop());
           s = await get("user");
         }
@@ -388,7 +391,7 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       k.live = false;
       closeRear(k.s);
     };
-  }, [go]);
+  }, [go, cam]);
 
   const name = eye === "r" ? "right" : "left";
   return (
@@ -403,6 +406,12 @@ export function CamPupil({ onRead, onHand }: { onRead: (r: { r: EyeRead; l: EyeR
       <video ref={vid} playsInline muted autoPlay className={`aspect-[4/3] w-full rounded-xl bg-black object-cover ${front ? "-scale-x-100" : ""} ${ph === "align" || ph === "run" ? "" : "hidden"}`} />
       {ph === "align" && <Status checks={checks} count={count} />}
       {ph === "run" && <p role="status" className="text-lg font-semibold">Measuring the {name} eye. Keep still.</p>}
+      {ph === "align" && note && <p className="text-alert">{note}</p>}
+      {ph === "align" && (
+        <button type="button" onClick={() => { setPh("open"); setCam(front ? "environment" : "user"); setGo((g) => g + 1); }} className={`${ghost} text-dim`}>
+          {front ? "Use the back camera" : "Use the front camera"}
+        </button>
+      )}
       {ph === "align" && (
         <button type="button" onClick={onHand} className={`${ghost} text-dim`}>
           Rate by eye instead
