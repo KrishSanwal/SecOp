@@ -49,7 +49,7 @@ async function tok(body: Record<string, string>) {
   const j = await res.json().catch(() => null);
   if (!res.ok || !j) {
     const bad = j?.error === "invalid_grant";
-    throw new HError(bad ? 401 : 502, bad ? "Google access expired. Connect the wearable again." : `Google token ${res.status}: ${String(j?.error_description ?? j?.error ?? "no body").slice(0, 160)}`);
+    throw new HError(bad ? 401 : 502, bad ? "Google access expired. Connect the Actiwatch again." : `Google token ${res.status}: ${String(j?.error_description ?? j?.error ?? "no body").slice(0, 160)}`);
   }
   return j as { access_token?: string; refresh_token?: string };
 }

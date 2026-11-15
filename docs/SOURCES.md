@@ -15,6 +15,8 @@ Keys in brackets are how `CHECKLIST_MAP.md` cites them. All links below were che
 | SLEEP | HRP Evidence Report: Risk of Performance Decrements and Adverse Health Outcomes Resulting from Sleep Loss, Circadian Desynchronization, and Work Overload (2016) | https://ntrs.nasa.gov/api/citations/20160003864/downloads/20160003864.pdf | sleep threshold |
 | BMED | HRP Evidence Report: Risk of Adverse Cognitive or Behavioral Conditions and Psychiatric Disorders (2016) | https://ntrs.nasa.gov/api/citations/20160004365/downloads/20160004365.pdf | mood station |
 | WOOD | Wood, Sensorimotor adaptation during and following spaceflight, NASA JSC (2021) | https://ntrs.nasa.gov/api/citations/20210025094/downloads/Wood-AeroMed%20UTHNeuro-Dec21.pdf | Romberg in the post-flight neuro exam |
+| ACTI | NASA ISS experiment: Actiwatch Spectrum (sleep-wake actigraphy and light exposure, worn by crew, downloaded periodically) | https://www.nasa.gov/mission/station/research-explorer/investigation/?#id=869 | wearables page: what crews wear today |
+| BIOM | CSA Bio-Monitor (Astroskin smart shirt: ECG, heart rate, breathing, SpO2, skin temperature, activity) | https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp | wearables page: vitals stream crews already generate |
 | | NASA Human Research Roadmap | https://humanresearchroadmap.nasa.gov/ | risk definitions |
 | | NASA Human Research Program | https://www.nasa.gov/hrp/ | background |
 | JPL | NASA JPL Solar System Dynamics, Approximate Positions of the Planets (Keplerian elements, Standish and Williams), Table 1 | https://ssd.jpl.nasa.gov/planets/approx_pos.html | Earth and Mars orbital elements in `lib/mars.ts`: live Earth-Mars distance and one-way light delay on the result card |

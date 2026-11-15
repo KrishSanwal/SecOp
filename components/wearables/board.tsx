@@ -30,8 +30,8 @@ function Pick() {
     <>
       <header className="flex flex-col gap-2">
         <Back href="/" label="Crew" />
-        <h1 className="text-[2.5rem] leading-[1.05] font-bold">Wearables</h1>
-        <p className="text-dim">Daily readings from each crew member&apos;s wearable. Pick who to open.</p>
+        <h1 className="text-[2.5rem] leading-[1.05] font-bold">Actiwatch Spectrum</h1>
+        <p className="text-dim">ISS crews already wear an Actiwatch Spectrum for sleep and a Bio-Monitor shirt for vitals, but the numbers go to the ground, not to the crew. This page shows what SecOp does with that stream. A consumer band stands in for the flight hardware. Pick who to open.</p>
       </header>
       {cs && cs.length === 0 && <p className="text-dim">No crew yet. Add crew on the first screen.</p>}
       {cs && cs.length > 0 && (
@@ -64,15 +64,15 @@ function One({ id, linked, gerr }: { id: string; linked: boolean; gerr: string }
   return (
     <>
       <header className="flex flex-col gap-2">
-        <Back href="/wearables" label="Wearables" />
+        <Back href="/wearables" label="Actiwatch" />
         <h1 className="text-[2.5rem] leading-[1.05] font-bold">{name}</h1>
         <p className="text-dim">
-          {w.src === "live" ? `Wearable, synced ${at}.` : "Sample readings. Connect a wearable to see real ones."} The shaded line is {name}&apos;s usual over the last 14 days.
+          {w.src === "live" ? `Actiwatch, synced ${at}.` : "Sample readings, shaped like an Actiwatch night and a Bio-Monitor day. Connect a band to see real ones."} The shaded line is {name}&apos;s usual over the last 14 days.
         </p>
       </header>
 
       {(gerr || w.err) && <p role="alert" className="rounded-lg border border-alert/60 bg-panel p-3 text-alert">{gerr || w.err}</p>}
-      {linked && !w.err && !gerr && w.src === "live" && <p role="status" className="text-dim">Wearable connected.</p>}
+      {linked && !w.err && !gerr && w.src === "live" && <p role="status" className="text-dim">Actiwatch connected.</p>}
 
       <section className="flex flex-col gap-2" aria-labelledby="today">
         <h2 id="today" className="text-xl font-semibold">Today</h2>
@@ -120,19 +120,19 @@ function One({ id, linked, gerr }: { id: string; linked: boolean; gerr: string }
       })}
 
       {w.src === "live" && w.pull.missing.length > 0 && (
-        <p className="text-dim">{w.pull.missing.length} reading types did not come through from Google. Sync again, or check the wearable has been worn overnight.</p>
+        <p className="text-dim">{w.pull.missing.length} reading types did not come through from Google. Sync again, or check the Actiwatch has been worn overnight.</p>
       )}
 
-      <p className="text-sm text-dim">These readings give the crew context. They are not a diagnosis. If something feels wrong, follow the action cards after an exam and call the flight surgeon.</p>
+      <p className="text-sm text-dim">These readings give the crew context, the way NASA&apos;s Actiwatch sleep data gives it to researchers today. They are not a diagnosis. If something feels wrong, follow the action cards after an exam and call the flight surgeon.</p>
 
       <Bottom>
         {w.src === "live" ? (
           <>
             <button type="button" onClick={w.sync} disabled={w.busy} className={primary}>{w.busy ? "Syncing…" : "Sync now"}</button>
-            <button type="button" onClick={w.drop} className={`${ghost} text-dim`}>Disconnect wearable</button>
+            <button type="button" onClick={w.drop} className={`${ghost} text-dim`}>Disconnect Actiwatch</button>
           </>
         ) : (
-          <a href={`/api/health/auth?crew=${encodeURIComponent(id)}`} className={link}>Connect wearable</a>
+          <a href={`/api/health/auth?crew=${encodeURIComponent(id)}`} className={link}>Connect Actiwatch</a>
         )}
       </Bottom>
     </>
