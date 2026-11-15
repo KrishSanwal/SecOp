@@ -1,147 +1,146 @@
 # SecOp: build plan
 
-Deadline: **Sunday 15 Nov 2026, 11:59 PM IST.** Submission is final. Demo video: 30 seconds max.
+Deadline: Sunday 15 Nov 2026, 11:59 PM IST. The submission is final. Demo video is 30 seconds max.
 
-## The one sentence
+## The idea
 
-Two astronauts examine each other for five minutes; the phone's own camera and motion sensor take the
-measurements, the app compares each person against their own previous sessions, and tells them what to
-do next using NASA's ISS Medical Checklist. The examiner holds and positions the phone; they do not judge.
-An optional wearables page adds daily context from a wearable. The exam never depends on it.
+Two astronauts examine each other for five minutes. The phone's camera and motion sensor take the
+measurements, the app compares each person with their own earlier exams, and then it tells them what to
+do next using NASA's ISS Medical Checklist. The examiner holds and positions the phone. They don't have
+to judge anything.
 
-## Design (decided)
+## How an exam works
 
-### Roles in an exam
-- **Subject**: the astronaut being examined.
-- **Examiner**: the crewmate running the exam, holding the phone or laptop.
-- Both crew take both roles, back to back. That is the "second opinion".
+### Roles
+- Subject: the astronaut being examined.
+- Examiner: the crewmate running the exam and holding the phone.
+- Both crew take both roles, one after the other. That's the second opinion.
 
-### The five stations (in order, about one minute each)
-| # | Station | Hazard | How it is measured (automatic) | Stored | Fallback |
+### The five stations (about a minute each)
+| # | Station | Hazard | How it's measured | Stored | Fallback |
 |---|---|---|---|---|---|
-| 1 | Pupils | Neuro / radiation / SANS | Front camera 10-15 cm from the eye. Screen goes dark 1.5 s, then flashes white 2.5 s. MediaPipe finds the iris; dark pixels inside it = pupil. Pupil/iris ratio per frame gives latency and constriction. Both eyes. `lib/pupil.ts` | `pupils.lat` ms, `pupils.con` share, `pupils.asym` | Examiner rating brisk / sluggish / unequal (`l`, `r`) |
-| 2 | Orthostatic HR | Altered gravity / cardiovascular | Subject's fingertip over the back camera, flashlight on: red channel pulses with each beat. 20 s sitting, stand, 1 min wait, 20 s standing. `lib/ppg.ts` | `hr.sit`, `hr.stand` (bpm / 4), `hr.cam = true` | Manual 15 s pulse count |
-| 3 | Balance | Altered gravity / vestibular | Subject holds phone flat on the chest, feet together, eyes closed, 30 s. Motion sensor measures sway; a jolt means stepped out. `lib/sway.ts` | `bal.rms` m/s², `bal.secs`, `bal.sway` (derived) | Examiner sway rating |
-| 4 | Mood and sleep | Isolation / behavioral health | Questions, answered with buttons. Cannot be automatic. | hours, 1 to 5, free text | none |
-| 5 | Reaction | Cognition / CO2 | Tap when the screen turns green, 10 trials (already automatic) | median ms | none |
+| 1 | Pupils | Neuro / radiation / SANS | Front camera 10-15 cm from the eye. The screen goes dark for 1.5 s, then flashes white for 2.5 s. MediaPipe finds the iris and the dark pixels inside it are the pupil. The pupil/iris ratio per frame gives latency and constriction, for both eyes. `lib/pupil.ts` | `pupils.lat` ms, `pupils.con` share, `pupils.asym` | Examiner rates brisk / sluggish / unequal |
+| 2 | Orthostatic HR | Altered gravity / heart | Fingertip over the back camera with the flashlight on, so the red channel pulses with each beat. 20 s sitting, stand up, wait a minute, 20 s standing. `lib/ppg.ts`. If the subject's band is connected on that phone, the app can take the band's heart rate for those minutes instead. | `hr.sit`, `hr.stand` (bpm / 4), plus `hr.cam` or `hr.band` | Manual 15 s pulse count |
+| 3 | Balance | Altered gravity / vestibular | Phone held flat on the chest, feet together, eyes closed, 30 s. The motion sensor measures sway, and a jolt means they stepped out. `lib/sway.ts` | `bal.rms` m/s², `bal.secs`, `bal.sway` | Examiner rates the sway |
+| 4 | Mood and sleep | Isolation / behavioural health | Questions with button answers. This one can't be automatic. | hours, 1 to 5, free text | none |
+| 5 | Reaction | Cognition / CO2 | Tap when the screen turns green, 10 trials | median ms | none |
 
-Gravity: stations 2 and 3 need gravity. They are for planetary surface ops and after landing (Krish,
-`docs/CHECKLIST_MAP.md`). The flow should let the crew skip them when in transit.
+Stations 2 and 3 need gravity, so they're for surface ops and after landing (see `docs/CHECKLIST_MAP.md`).
+In transit the crew can skip them.
 
-Lighting: pupils need the room lights on (the camera must see the iris) and work best on lighter irises.
-Dark brown eyes are the known risk; verify with `/lab/pupil` before relying on it.
+Pupils need the room lights on so the camera can see the iris, and they work best on lighter eyes. Dark
+brown eyes are the known weak spot, so check with `/lab/pupil` before relying on it.
 
 ### Scoring
-- Each station produces a number. The first two exams are the **baseline** (mean).
-- Later exams show **delta from baseline**. Flag when: pupil latency > baseline + 25%, constriction
-  < baseline - 30%, or left/right constriction differs by > 0.1; orthostatic delta > 30 bpm; sway RMS
-  > baseline + 50% or stepped out; sleep < 6 h two days running; mood <= 2; reaction median > baseline
-  + 20%. Limits live in `LIMITS` in `lib/scoring.ts`. Manual ratings still score if a sensor fails.
-- Each flag maps to one action card: what to do now, and when to contact the flight surgeon. The
-  mapping lives in `docs/CHECKLIST_MAP.md` and is sourced from the ISS Medical Checklist.
+- Every station gives a number. The first two exams are the baseline (their mean).
+- Later exams show the change from baseline. We flag when pupil latency is more than 25% above
+  baseline, constriction is more than 30% below it, or left and right differ by more than 0.1; heart
+  rate jumps more than 30 bpm on standing; sway is more than 50% above baseline or they stepped out;
+  sleep is under 6 h two days running; mood is 2 or lower; or the reaction median is more than 20%
+  slower. The limits are in `LIMITS` in `lib/scoring.ts`. Manual ratings still score if a sensor fails.
+- Each flag has one action card: what to do now, and when to call the flight surgeon. The mapping is in
+  `docs/CHECKLIST_MAP.md` and comes from the ISS Medical Checklist.
 
-### Voice (offline)
-- Prompts are fixed text in `lib/prompts.ts`, pre-recorded once with Groq Orpheus (`npm run audio`)
-  into `public/audio/*.mp3`. Play one with `say("hr_sit")` from `lib/say.ts`.
-- No voice input. Every answer is a button or number pad.
-- The exam needs no network. `public/sw.js` caches pages, scripts and audio on first load.
-- No runtime API routes for voice. The exam makes zero network calls.
+### Voice
+- Prompts are fixed text in `lib/prompts.ts`, recorded once with Groq Orpheus (`npm run audio`) into
+  `public/audio/*.mp3`. `say("hr_sit")` in `lib/say.ts` plays one.
+- No voice input. Every answer is a button or a number pad.
+- The exam works with no network. `public/sw.js` caches the pages, scripts and audio on first load. The
+  only time the exam goes online is if the subject picks the band for heart rate.
 
 ### Storage
-- IndexedDB (`idb` package). One store: `exams` keyed by id, with `subjectId`, `examinerId`,
-  `timestamp`, five station results. One store: `crew` with names and baselines.
-- Export as JSON from the results screen.
-- Wearables use a separate database, `second-opinion-wearables`, with one store `pulls` keyed by crew id
-  (the last sync only). Database names kept the old app name on purpose, so saved data survives the rename.
+- IndexedDB through `idb`. An `exams` store keyed by id (subject, examiner, time, the five results) and a
+  `crew` store with names and baselines.
+- Results export as JSON from the results screen.
+- Band readings live in their own small database, just the last sync for each crew member.
 
-### Wearables (optional, added Sun 15 Nov, Krish, PR #26)
-- `/wearables?crew=` shows daily readings from a wearable through the Google Health API: resting and
-  sleeping heart rate, HRV, sleep (deep, REM), blood oxygen, breathing rate, skin temperature, steps,
-  active minutes, cardio fitness, sedentary time, irregular rhythm alerts. `/wearables/metric?crew=&m=`
-  shows one reading with a line chart and plain "what this means" and "on a mission" text.
-- Sign-in: Google OAuth per crew member, read-only scopes. `/api/health/auth` sends the user to Google,
-  `/api/health/callback` keeps the refresh token in an httpOnly cookie scoped to `/api/health`. No accounts
-  of our own; nothing is stored on a server.
-- Sync: `/api/health/data` (Node runtime) pulls the last 30 days. The last pull is saved in IndexedDB, so
-  the page still reads with no network. Syncing needs a network.
-- Scoring: `lib/health/base.ts` compares the latest value with that person's own 14-day usual (at least
-  5 days of data). Flags (limits in `LIM`): resting or sleeping HR > usual + 6 bpm, HRV < usual - 25%,
-  sleep < 6 h two nights running, SpO2 < 92% or > 3 points below usual, breathing rate > usual + 2/min,
-  skin temperature > +1 °C, any irregular rhythm alert. Verdict: Looks normal, Worth a recheck, or
-  Could not measure.
-- Without `GOOGLE_HEALTH_CLIENT_ID` and `GOOGLE_HEALTH_CLIENT_SECRET` the page shows clearly labelled
-  sample data (`lib/health/demo.ts`).
-- Kept separate from the exam: band flags do not change exam scores or action cards. No AI text (the
-  Groq "note for today" was removed). On a real mission the band would sync over Bluetooth instead of
-  Google; the screens and scoring would not change.
+## Monitors page (optional)
 
-### Screens (query params, not [id] folders, so the offline cache covers every exam)
-1. `/` Crew: pick subject and examiner (two cards, swap button).
-2. `/exam` Station flow: one station per screen, big timer, voice prompt, buttons.
-3. `/result?id=` Result card: five rows, delta vs baseline, flags, action cards.
-4. `/trend?crew=` Timeline of that crew member's exams.
-5. `/sync` Phone-to-phone transfer by QR code.
-6. `/wearables?crew=` and `/wearables/metric?crew=&m=` Optional band readings.
+ISS crews already wear an Actiwatch Spectrum for sleep and activity and a Bio-Monitor shirt for heart
+rate, breathing, blood oxygen and skin temperature, but those numbers go to the ground and the crew
+never sees them. This page shows what SecOp would do with that data.
+
+- `/wearables?crew=` shows daily readings: resting and sleeping heart rate, HRV, sleep (deep, REM), blood
+  oxygen, breathing rate, skin temperature, steps, active minutes, cardio fitness, sedentary time and
+  irregular rhythm alerts. `/wearables/metric?crew=&m=` opens one reading with a chart and a plain
+  explanation.
+- Each crew member signs in with Google, read-only. The sign-in stays in a cookie on their own phone. We
+  have no accounts of our own and store nothing on a server.
+- The last sync is kept on the phone, so the page still opens offline. Syncing needs a network.
+- Each reading is compared with that person's own 14-day usual (at least 5 days of data). We flag resting
+  or sleeping heart rate 6+ bpm over usual, HRV down 25%, under 6 h of sleep two nights running, SpO2
+  under 92% or 3 points below usual, breathing 2/min over usual, skin temperature up more than 1 °C, and
+  any irregular rhythm alert. Limits are in `LIM` in `lib/health/base.ts`.
+- If the Google keys aren't set, the page shows sample data and says so.
+- Station 2 can take its heart rate from the band. Nothing else from the band changes the exam scores or
+  action cards.
+
+What we'd actually send up: a small health tracker for the station that monitors the heart properly,
+ECG included, and passes its readings to the crew's phone or tablet over a wire, so no internet or
+Google account is involved. We only have a consumer wrist band to build with, so we're sticking with
+that for the prototype.
+
+## Screens
+
+1. `/` Crew: pick the subject and examiner (two cards, swap button).
+2. `/exam` One station per screen: big timer, voice prompt, buttons.
+3. `/result?id=` Result card: five rows, change from baseline, flags, action cards.
+4. `/trend?crew=` That person's exams over time.
+5. `/sync` Copy records from one phone to another by QR code.
+6. `/wearables?crew=` The monitors page.
 7. `/lab`, `/lab/pupil`, `/lab/hr`, `/lab/sway` Sensor test pages.
 
-Dark UI. One accent colour. No NASA logos anywhere.
+We use query params instead of `[id]` folders so the offline cache covers every exam. Dark UI, one accent
+colour, no NASA logos anywhere.
 
-### Not building
-- No wearable required: the exam runs on the phone alone. The wearables page is optional context.
-- No Bluetooth, no rPPG (pulse from the face). Camera pupils and fingertip camera pulse are built.
-- No accounts of our own, no server database, no Mission Control view. The only sign-in is the optional
-  Google one on the wearables page, and the only server code is the three `/api/health` routes.
-- No Hindi in v1 unless everything else is done by Sunday 6 PM.
+## Not building
 
-## Task split
+- Extra hardware for the exam. It runs on the phone alone, and the monitors page is a bonus.
+- Bluetooth, or pulse from the face (rPPG).
+- Accounts, a server database or a Mission Control view. The only server code is the few small
+  `/api/health` routes behind the Google sign-in.
+- Hindi, for now.
 
-Owner A = Shaurya. Owner B = Krish. Each task is a GitHub issue. Claim it by assigning yourself.
+## Tasks
 
-| # | Task | Owner | Done when |
-|---|---|---|---|
-| 1 | Repo, scaffold, deploy to Vercel, env vars | A | Vercel URL loads the home page |
-| 2 | `lib/scoring.ts`: station types, baseline, delta, flag rules, with unit tests | A | `npm test` green |
-| 3 | `lib/db.ts`: IndexedDB crew + exams store, export JSON | A | add/list/get work in browser |
-| 4 | Voice prompt audio (Groq Orpheus, build-time script only; no runtime API routes) | A | done |
-| 5 | Crew screen `/` | B | pick subject + examiner, continue to exam |
-| 6 | Station flow `/exam`: 5 station screens, timers, buttons | B | full exam completes and saves |
-| 7 | Result card `/result?id=` with flags and action cards | B | shows deltas against seeded baseline |
-| 8 | `docs/CHECKLIST_MAP.md`: flag to action mapping from ISS Medical Checklist, with citations | B | every flag has an action and a source |
-| 9 | Offline: prompt audio + service worker + installable app | A | exam works in airplane mode |
-| 10 | Seed data: two crew with two baseline exams each, one "drifted" exam for the demo | A | result card shows a real flag |
-| 11 | Demo video, 30 seconds, uploaded unlisted on YouTube | B | public link works in incognito |
-| 12 | Submission form text, NASA links, SI disclosure, Submit for Judging | A + B | status shows Submitted |
-
-## Sensor build (added Sat 14 Nov evening)
+A = Shaurya, B = Krish. Each task is a GitHub issue. Assign yourself to claim it.
 
 | # | Task | Owner | Done when |
 |---|---|---|---|
-| 13 | Sensor libs: `lib/pupil.ts`, `lib/ppg.ts`, `lib/sway.ts`, scoring fields, lab pages `/lab/*` | A | done: 24 tests, labs live |
-| 14 | Test `/lab/pupil` on own eyes on a phone; report if the red disc tracks the pupil | A + B | go / no-go for camera pupils |
-| 15 | Wire camera HR + motion balance into `components/exam.tsx` with manual fallback | B | full exam runs with phone sensors |
-| 16 | Wire camera pupils into the exam (only if 14 is a go) | A | done: pupil station automatic, reflex graph vs last exam |
-| 17 | Result card shows the new numbers vs usual (latency, constriction, sway) | B | numbers visible with "usual" |
-| 18 | In-transit toggle: skip stations 2 and 3 | B | toggle on intro screen |
-
-## Wearables (added Sun 15 Nov)
-
-| # | Task | Owner | Done when |
-|---|---|---|---|
-| 19 | `/wearables`: Google Health sign-in, sync, 14-day usual, flags, sample data, offline cache | B | done: PR #26 merged |
-| 20 | Google OAuth keys on Vercel (optional, only for a live band in the demo) | A | sign-in reaches the Google consent screen |
+| 1 | Repo, scaffold, deploy to Vercel, env vars | A | the Vercel URL loads the home page |
+| 2 | `lib/scoring.ts`: station types, baseline, change, flag rules, with tests | A | `npm test` is green |
+| 3 | `lib/db.ts`: crew and exams in IndexedDB, JSON export | A | add, list and get work in the browser |
+| 4 | Voice prompts (recorded once at build time, nothing at runtime) | A | done |
+| 5 | Crew screen `/` | B | pick subject and examiner, go to the exam |
+| 6 | Station flow `/exam`: five screens, timers, buttons | B | a full exam completes and saves |
+| 7 | Result card `/result?id=` with flags and action cards | B | shows changes against the seeded baseline |
+| 8 | `docs/CHECKLIST_MAP.md`: flag to action, from the ISS Medical Checklist, with citations | B | every flag has an action and a source |
+| 9 | Offline: audio, service worker, installable app | A | the exam works in airplane mode |
+| 10 | Demo data: two crew with two baseline exams each, plus one exam that has drifted | A | the result card shows a real flag |
+| 11 | Demo video, 30 seconds, unlisted on YouTube | B | the link works in incognito |
+| 12 | Submission form, NASA links, AI disclosure, Submit for Judging | A + B | status shows Submitted |
+| 13 | Sensor code: `lib/pupil.ts`, `lib/ppg.ts`, `lib/sway.ts`, lab pages | A | done |
+| 14 | Try `/lab/pupil` on our own eyes on a phone | A + B | go / no-go for camera pupils |
+| 15 | Camera heart rate and motion balance in the exam, with manual fallback | B | a full exam runs on the phone's sensors |
+| 16 | Camera pupils in the exam (if 14 is a go) | A | done |
+| 17 | Result card shows latency, constriction and sway against usual | B | numbers show with "usual" |
+| 18 | In-transit switch that skips stations 2 and 3 | B | switch on the intro screen |
+| 19 | Monitors page: Google sign-in, sync, 14-day usual, flags, sample data, offline | B | done |
+| 20 | Google keys on Vercel so a real band works in the demo | B | sign-in reaches Google's consent screen |
+| 21 | Station 2 can use the band's heart rate instead of the camera | B | done |
 
 ## Timeline (IST)
 
-- **Sat 14 Nov, by 18:00**: tasks 1, 2, 3, 5 done. App runs locally with a fake exam.
-- **Sat 14 Nov, by 23:00**: tasks 4, 6, 7, 8. Full exam, result card, no voice yet.
-- **Sun 15 Nov, by 14:00**: task 10. Seeded demo path. Film the demo in airplane mode.
-- **Sun 15 Nov, by 18:00**: freeze features. Task 11 (video) and 12 (form) only.
-- **Sun 15 Nov, 21:00**: Submit for Judging. Three hours of buffer. Do not use it for features.
+- Sat 14 Nov, by 18:00: tasks 1, 2, 3 and 5. The app runs locally with a fake exam.
+- Sat 14 Nov, by 23:00: tasks 4, 6, 7 and 8. Full exam and result card, no voice yet.
+- Sun 15 Nov, by 14:00: task 10, the demo path. Film the demo in airplane mode.
+- Sun 15 Nov, by 18:00: feature freeze. Only the video and the form after this.
+- Sun 15 Nov, 21:00: Submit for Judging, leaving three hours of buffer. Don't spend it on features.
 
-## How we work in one repo
+## Working in one repo
 
-- `main` always runs. Never push a broken build to `main`.
-- One branch per task: `git checkout -b task-6-station-flow`.
-- Push often, open a PR, the other person merges (or merge your own if the other is asleep).
-- Before starting work each time: `git checkout main && git pull`.
+- `main` always runs. Don't push a broken build to it.
+- One branch per task, e.g. `git checkout -b task-6-station-flow`.
+- Push often and open a PR. The other person merges, or merge your own if they're asleep.
+- Always start with `git checkout main && git pull`.
 - Never commit `.env.local`.
