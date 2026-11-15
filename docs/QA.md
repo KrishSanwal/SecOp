@@ -63,7 +63,7 @@ No. It flags change from your own normal and tells you what NASA's checklist say
 
 **How does the flight surgeon see the results?** Export now. Next: a tiny text summary queued for the next comms window (docs/IDEAS.md #2).
 
-**What did you use AI for?** Claude Code helped write code and docs; Groq Orpheus generated the voice prompts. We reviewed, tested and can explain every part. Disclosed in the README.
+**What did you use AI for?** The idea and the design are ours. Claude Code helped write code and docs; Groq Orpheus generated the voice prompts. We reviewed, tested and can explain every part. Disclosed in the README.
 
 **What did each of you do?** Shaurya: scoring engine, storage, offline support, voice prompts, sensor measurements (pupil, heart rate, balance). Krish: crew, exam and result screens, the NASA checklist mapping with citations, threshold review. Both: design, testing, pitch.
 

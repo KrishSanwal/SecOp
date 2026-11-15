@@ -46,8 +46,8 @@ Full list with links: `docs/SOURCES.md`.
 
 ## Use of AI tools (SI disclosure)
 
-Code and documentation were written with AI assistance (Claude Code, Anthropic). All logic was
-reviewed and tested by the team. The spoken exam prompts (`public/audio/*.mp3`) are AI-generated speech
+The idea, the exam design and the decisions behind it are our own. Code and documentation were written
+with AI assistance (Claude Code, Anthropic). All logic was reviewed and tested by the team. The spoken exam prompts (`public/audio/*.mp3`) are AI-generated speech
 (Groq, Orpheus text-to-speech); their source text is in `lib/prompts.ts`. No NASA branding is used anywhere in the project.
 
 ## Not a medical device

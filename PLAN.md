@@ -99,31 +99,38 @@ colour, no NASA logos anywhere.
 
 ## Tasks
 
-A = Shaurya, B = Krish. Each task is a GitHub issue. Assign yourself to claim it.
+A = Shaurya, B = Krish. Taken from what each of us actually committed.
 
-| # | Task | Owner | Done when |
+| # | Task | Owner | Status |
 |---|---|---|---|
-| 1 | Repo, scaffold, deploy to Vercel, env vars | A | the Vercel URL loads the home page |
-| 2 | `lib/scoring.ts`: station types, baseline, change, flag rules, with tests | A | `npm test` is green |
-| 3 | `lib/db.ts`: crew and exams in IndexedDB, JSON export | A | add, list and get work in the browser |
-| 4 | Voice prompts (recorded once at build time, nothing at runtime) | A | done |
-| 5 | Crew screen `/` | B | pick subject and examiner, go to the exam |
-| 6 | Station flow `/exam`: five screens, timers, buttons | B | a full exam completes and saves |
-| 7 | Result card `/result?id=` with flags and action cards | B | shows changes against the seeded baseline |
-| 8 | `docs/CHECKLIST_MAP.md`: flag to action, from the ISS Medical Checklist, with citations | B | every flag has an action and a source |
-| 9 | Offline: audio, service worker, installable app | A | the exam works in airplane mode |
-| 10 | Demo data: two crew with two baseline exams each, plus one exam that has drifted | A | the result card shows a real flag |
-| 11 | Demo video, 30 seconds, unlisted on YouTube | B | the link works in incognito |
-| 12 | Submission form, NASA links, AI disclosure, Submit for Judging | A + B | status shows Submitted |
-| 13 | Sensor code: `lib/pupil.ts`, `lib/ppg.ts`, `lib/sway.ts`, lab pages | A | done |
-| 14 | Try `/lab/pupil` on our own eyes on a phone | A + B | go / no-go for camera pupils |
-| 15 | Camera heart rate and motion balance in the exam, with manual fallback | B | a full exam runs on the phone's sensors |
-| 16 | Camera pupils in the exam (if 14 is a go) | A | done |
-| 17 | Result card shows latency, constriction and sway against usual | B | numbers show with "usual" |
-| 18 | In-transit switch that skips stations 2 and 3 | B | switch on the intro screen |
-| 19 | Wearables page: Google sign-in, sync, 14-day usual, flags, sample data, offline | B | done |
-| 20 | Google keys on Vercel so a real band works in the demo | B | sign-in reaches Google's consent screen |
-| 21 | Station 2 can use the band's heart rate instead of the camera | B | done |
+| 1 | Repo, Next.js scaffold, first Vercel deploy | A | done |
+| 2 | Scoring: baseline, change from baseline, flag rules, with tests (`lib/scoring.ts`) | A | done |
+| 3 | Storage: crew and exams in IndexedDB, JSON export (`lib/db.ts`) | A | done |
+| 4 | Voice prompts, recorded once so the exam needs no network | A | done |
+| 5 | Offline: service worker, installable app | A | done |
+| 6 | Crew screen `/`: pick subject and examiner, swap, add crew | B | done |
+| 7 | Station flow `/exam`: five stations with timers, prompts and buttons, saves the exam | B | done |
+| 8 | Result card `/result`: flags, action cards, every station against usual | B | done |
+| 9 | Checklist map: flag to action from the ISS Medical Checklist, with sources | B | done |
+| 10 | Demo crew, seeded exams and the Try demo button | A | done |
+| 11 | Sensor code: camera pupil reflex, fingertip heart rate, motion sway, `/lab` test pages | A | done |
+| 12 | Camera heart rate and motion balance in the exam, with manual fallback | B | done |
+| 13 | Camera pupils in the exam, with the reflex graph against the last exam | A | done |
+| 14 | Result card shows the sensor numbers against usual | B | done |
+| 15 | In-space mode and the in-transit switch that skips stations 2 and 3 | A + B | done |
+| 16 | Trends page and insights after every exam | A | done |
+| 17 | Live pulse wave, heartbeat vibration, Mars delay with a queued message, crew board | A | done |
+| 18 | Phone-to-phone sync by QR code `/sync` | A | done |
+| 19 | Look and feel: dark theme, accent colour, icons, crew screen redesign | B | done |
+| 20 | Rename to SecOp, new logo, NASA and JPL source credits | B | done |
+| 21 | Wearables page: Google sign-in, sync, 14-day usual, flags, sample data, offline | B | done |
+| 22 | Station 2 can use the band's heart rate instead of the camera | B | done |
+| 23 | Phone test fixes: speaker buttons, steadier pupil test, voice on/off switch | B | done |
+| 24 | Live site on Vercel: getsecop.vercel.app | B | done |
+| 25 | Google keys on Vercel so a real band works on the live site | B | to do |
+| 26 | Pitch kit: 3-minute pitch, slides, judge Q&A, ideas | A | done |
+| 27 | Demo video: shot list, script, filming, final edit | A | in progress |
+| 28 | Submission form, NASA links, AI disclosure, Submit for Judging | A + B | to do |
 
 ## Timeline (IST)
 
