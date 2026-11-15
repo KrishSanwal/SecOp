@@ -1,10 +1,10 @@
-# Pitch: Second Opinion
+# Pitch: SecOp
 
 Judged on five equal criteria: **Impact, Creativity, Validity, Relevance, Presentation** (Space Apps Judging & Awards Guide).
 Local Delhi judges run their own format; assume a short live pitch plus questions. Global submission is the 30 s video or 7 slides.
 
 ## The one line
-"On Mars there's no doctor and no signal. Second Opinion turns your crewmate and the phone already in their pocket into a five-minute health check that works with no internet."
+"On Mars there's no doctor and no signal. SecOp turns your crewmate and the phone already in their pocket into a five-minute health check that works with no internet."
 
 ## Live pitch, 3 minutes (split it: Shaurya = story + tech, Krish = demo + science)
 
@@ -17,7 +17,7 @@ Local Delhi judges run their own format; assume a short live pitch plus question
 | 1:45 | Shaurya | "Every flag comes with 'do now' and 'when to call the surgeon', straight from NASA's ISS Medical Checklist. Airplane mode is on right now." Point at it. | Result card, airplane icon |
 | 2:10 | Shaurya | "The camera times the pupil reflex, the camera reads your pulse, the motion sensor measures sway. No wearables, no cloud, compared against your own baseline, not a textbook average." | One slide, 3 icons |
 | 2:35 | Krish | "Next: an analog-mission pilot, a red filter that makes phone pupillometry work on dark eyes, and the same exam for Antarctic stations and rural health workers." | Roadmap slide |
-| 2:55 | Both | "Second Opinion. Because nobody should be their own doctor 225 million km from Earth." | End |
+| 2:55 | Both | "SecOp. Because nobody should be their own doctor 225 million km from Earth." | End |
 
 Rules: phone in **airplane mode** for the whole demo. Have the demo data loaded before you walk up. Rehearse it 3 times with a timer. If something fails live, say "this is why we built manual fallbacks" and switch to the manual entry.
 
@@ -37,4 +37,4 @@ Rules: phone in **airplane mode** for the whole demo. Have the demo data loaded 
 - Who is it for? Long-duration crews (Mars, Moon base), and analogs on Earth.
 - Why a peer? Self-assessment misses slow decline and people under-report; the ISS checklist already uses crew medical officers.
 - What's real vs mocked? Real: all five stations, scoring, offline, sensors. Demo data is seeded. Pupil camera on dark eyes is the open problem.
-- What NASA data? ISS Medical Checklist JSC-48522, NASA-STD-3001 Vol 1 and 2, HRP evidence reports (orthostatic, sleep, behavioral), NASA Cognition / PVT-B research.
+- What NASA data? ISS Medical Checklist JSC-48522, NASA-STD-3001 Vol 1 and 2, HRP evidence reports (orthostatic, sleep, behavioral), NASA Cognition / PVT-B research, and JPL orbital elements for the live Mars delay.

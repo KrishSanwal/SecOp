@@ -1,4 +1,4 @@
-# What else Second Opinion could do
+# What else SecOp could do
 
 Ranked by how much each strengthens the pitch for the time it costs. **Bold = buildable before Sunday 21:00.**
 The rest are "roadmap" answers for the Q&A ("what would you do with more time?").

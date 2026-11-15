@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Detail from "@/components/wearables/detail";
 
-export const metadata: Metadata = { title: "Reading · Second Opinion" };
+export const metadata: Metadata = { title: "Reading · SecOp" };
 
 export default function Page() {
   return (

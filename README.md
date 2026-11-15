@@ -1,8 +1,8 @@
-# Second Opinion
+# SecOp
 
 **NASA Space Apps 2026, Delhi. Challenge: Create Health Monitoring Software for Astronauts on Space Missions. Team Vortexx.**
 
-On a Mars crew of four, your crewmate is your doctor. Second Opinion is a voice-guided five-minute
+On a Mars crew of four, your crewmate is your doctor. SecOp (short for *second opinion*) is a voice-guided five-minute
 peer exam: two astronauts check each other (pupil response, orthostatic heart rate, balance, mood,
 reaction time), each scores the other, and the app compares every result to that person's own
 baseline and to the procedures in NASA's ISS Medical Checklist.
@@ -38,6 +38,9 @@ Google Health API when the two Google OAuth variables are set.
 - NASA-STD-3001 Human Systems Standard: physiological limits
 - NASA Human Research Roadmap: risk definitions (altered gravity, isolation, radiation, closed environment)
 - NASA Human Research Program publications on orthostatic intolerance and post-flight balance
+- NASA-funded research on the PVT-B reaction test and the spaceflight Cognition battery (Basner et al.): reaction station
+- NASA JPL Solar System Dynamics, Keplerian elements for the approximate positions of the planets: the live
+  Earth-Mars light delay on the result card (`lib/mars.ts`)
 
 Full list with links: `docs/SOURCES.md`.
 
@@ -49,7 +52,7 @@ reviewed and tested by the team. The spoken exam prompts (`public/audio/*.mp3`) 
 
 ## Not a medical device
 
-Second Opinion is a hackathon prototype. It is not validated for clinical use.
+SecOp is a hackathon prototype. It is not validated for clinical use.
 
 ## Team
 

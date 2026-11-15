@@ -11,7 +11,7 @@ export default function Home() {
           <circle cx="10" cy="10" r="8" />
           <circle cx="18" cy="10" r="8" />
         </svg>
-        <span className="text-base leading-none font-bold whitespace-nowrap text-chalk">Second Opinion</span>
+        <span className="text-base leading-none font-bold whitespace-nowrap text-chalk">SecOp</span>
         <Link href="/wearables" className="ml-auto min-h-11 content-center px-1.5 text-sm whitespace-nowrap text-dim hover:text-accent">Wearables</Link>
         <Link href="/lab" className="min-h-11 content-center px-1.5 text-sm whitespace-nowrap text-dim hover:text-accent">
           Sensors

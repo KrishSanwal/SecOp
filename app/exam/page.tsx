@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Exam from "@/components/exam";
 
-export const metadata: Metadata = { title: "Exam · Second Opinion" };
+export const metadata: Metadata = { title: "Exam · SecOp" };
 
 export default function Page() {
   return (

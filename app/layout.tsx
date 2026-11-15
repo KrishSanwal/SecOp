@@ -11,7 +11,7 @@ const sans = Atkinson_Hyperlegible_Next({
 
 
 export const metadata: Metadata = {
-  title: "Second Opinion",
+  title: "SecOp",
   description: "A five-minute peer health exam for astronaut crews. Works offline.",
 };
 

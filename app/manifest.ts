@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Second Opinion",
-    short_name: "2nd Opinion",
+    name: "SecOp",
+    short_name: "SecOp",
     description: "Peer health exam for astronaut crews. Works offline.",
     start_url: "/",
     display: "standalone",

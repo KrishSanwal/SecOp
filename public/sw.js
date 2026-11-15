@@ -1,4 +1,4 @@
-const V = "so-v7";
+const V = "so-v8";
 const PAGES = ["/", "/exam", "/result", "/trend", "/sync", "/wearables", "/wearables/metric", "/lab", "/lab/pupil", "/lab/hr", "/lab/sway"];
 const MP = ["/mp/vision_wasm_internal.js", "/mp/vision_wasm_internal.wasm", "/models/face_landmarker.task"];
 

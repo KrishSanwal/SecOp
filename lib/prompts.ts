@@ -1,6 +1,6 @@
 // Edit text here, then run `npm run audio` to regenerate public/audio.
 export const PROMPTS = {
-  start: "Second Opinion. Five stations, about five minutes. Examiner, hold the device. Subject, sit down and relax.",
+  start: "Five stations, about five minutes. Examiner, hold the device. Subject, sit down and relax.",
   pupil_intro: "Station one. Pupils. Dim the lights if you can.",
   pupil_left: "Shine the light into the left eye for two seconds. Watch the pupil shrink.",
   pupil_right: "Now the right eye. Two seconds.",

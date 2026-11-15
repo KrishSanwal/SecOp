@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Sync from "@/components/sync";
 
-export const metadata: Metadata = { title: "Phone to phone · Second Opinion" };
+export const metadata: Metadata = { title: "Phone to phone · SecOp" };
 
 export default function Page() {
   return (

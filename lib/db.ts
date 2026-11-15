@@ -60,7 +60,7 @@ export async function exportJson() {
   const blob = new Blob([JSON.stringify(await dump(), null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `second-opinion-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `secop-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }

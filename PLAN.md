@@ -1,4 +1,4 @@
-# Second Opinion: build plan
+# SecOp: build plan
 
 Deadline: **Sunday 15 Nov 2026, 11:59 PM IST.** Submission is final. Demo video: 30 seconds max.
 

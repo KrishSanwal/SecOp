@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Trend from "@/components/trend";
 
-export const metadata: Metadata = { title: "Trends · Second Opinion" };
+export const metadata: Metadata = { title: "Trends · SecOp" };
 
 export default function Page() {
   return (

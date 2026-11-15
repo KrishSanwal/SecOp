@@ -1,4 +1,4 @@
-# Second Opinion: rules for AI sessions
+# SecOp: rules for AI sessions
 
 Read `PLAN.md` first. It is the design and the task list.
 

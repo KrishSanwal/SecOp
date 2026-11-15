@@ -58,7 +58,7 @@ export class Receiver {
       body = await pipe(body, new DecompressionStream("deflate-raw"));
     }
     const b = JSON.parse(new TextDecoder().decode(body)) as Bundle;
-    if (!Array.isArray(b.crew) || !Array.isArray(b.exams)) throw new Error("Not a Second Opinion transfer.");
+    if (!Array.isArray(b.crew) || !Array.isArray(b.exams)) throw new Error("Not a SecOp transfer.");
     return b;
   }
 }
