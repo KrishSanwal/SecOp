@@ -4,7 +4,7 @@ import { ArrowLeft, Minus, Plus, SpeakerHigh } from "@phosphor-icons/react";
 import Link from "next/link";
 import { Children, createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { PROMPTS, type PromptId } from "@/lib/prompts";
-import { say } from "@/lib/say";
+import { hushIf, say } from "@/lib/say";
 
 export const btn =
   "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[3px] px-4 font-semibold transition-colors duration-150 disabled:cursor-not-allowed";
@@ -39,6 +39,7 @@ export function Back({ href, onClick, label = "Back" }: { href?: string; onClick
 
 export function Cue({ id, big }: { id: PromptId; big?: boolean }) {
   const talk = useContext(Talk);
+  useEffect(() => () => hushIf([id]), [id]);
   return (
     <div className="flex items-start gap-3">
       <p className={big ? "font-display text-2xl leading-snug font-semibold text-chalk" : "text-lg leading-relaxed"}>{PROMPTS[id]}</p>
@@ -61,6 +62,7 @@ export function useCues(...ids: PromptId[]) {
     })();
     return () => {
       live = false;
+      hushIf(key.split(",") as PromptId[]);
     };
   }, [key, talk]);
 }
@@ -113,9 +115,11 @@ export function Timed(p: {
   useEffect(() => {
     if (!p.cue) return;
     let live = true;
-    talk(p.cue).then(() => live && setGo(true));
+    const cue = p.cue;
+    talk(cue).then(() => live && setGo(true));
     return () => {
       live = false;
+      hushIf([cue]);
     };
   }, [p.cue, talk]);
 
